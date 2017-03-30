@@ -1,2 +1,2 @@
 # kws-eval
-Tools for the evaluation of Keyword Spotting contests
+Tools for the evaluation of Keyword Spotting
