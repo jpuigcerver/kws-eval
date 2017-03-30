@@ -1,0 +1,1 @@
+ADD_EXECUTABLE(KwsEvalIcdar17 KwsEvalIcdar17.cc)
