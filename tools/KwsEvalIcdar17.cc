@@ -50,8 +50,6 @@ int main(int argc, char** argv) {
   }
 
 
-  //IntersectionOverHypothesisAreaScorer<RefEvent, HypEvent> scorer(0.5);
-
   SimpleEvaluator<RefEvent, HypEvent, OverlapScorer> eval(OverlapScorer(0.5));
 
 

@@ -48,8 +48,13 @@ struct ScoredEvent : public Event<L> {
 
 template <typename L>
 std::istream& operator>>(std::istream& is, ScoredEvent<L>& event) {
-  is >> event.query >> event.location >> event.score;
-  while(is.good() && is.get() != '\n') {}
+  // Skip lines started with #, these are comments.
+  is >> std::ws;
+  while (is.good() && is.peek() == '#') {
+    while (is.good() && is.get() != '\n') {}
+    is >> std::ws;
+  }
+  is >> event.query >> event.location >> event.score >> std::ws;
   return is;
 }
 

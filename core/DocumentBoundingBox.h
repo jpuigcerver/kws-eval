@@ -15,7 +15,7 @@ struct DocumentBoundingBox : public BoundingBox<T> {
   DocumentBoundingBox() {}
 
   DocumentBoundingBox(const T& x, const T& y, const T& w, const T& h,
-              const std::string& p) :
+                      const std::string& p) :
       BoundingBox<T>(x, y, w, h), document(p) { }
 
   inline bool operator==(const DocumentBoundingBox& other) const {
@@ -37,8 +37,10 @@ struct DocumentBoundingBox : public BoundingBox<T> {
   }
 
   inline T IntersectionArea(const DocumentBoundingBox& other) const {
-    if (document == other.document) return BoundingBox<T>::IntersectionArea(other);
-    else return 0;
+    if (document == other.document)
+      return BoundingBox<T>::IntersectionArea(other);
+    else
+      return 0;
   }
 
   inline T UnionArea(const DocumentBoundingBox& other) const {
@@ -46,8 +48,10 @@ struct DocumentBoundingBox : public BoundingBox<T> {
   }
 
   inline float CenterDistance(const DocumentBoundingBox& other) const {
-    if (document == other.document) return BoundingBox<T>::CenterDistance(other);
-    else return std::numeric_limits<float>::infinity();
+    if (document == other.document)
+      return BoundingBox<T>::CenterDistance(other);
+    else
+      return std::numeric_limits<float>::infinity();
   }
 };
 
@@ -61,6 +65,18 @@ template <typename T>
 std::ostream& operator<<(std::ostream& os, const DocumentBoundingBox<T>& bb) {
   os << bb.document << " " << static_cast<const BoundingBox<T>&>(bb);
   return os;
+}
+
+template <typename T>
+inline T IntersectionArea(const DocumentBoundingBox<T>& a,
+                          const DocumentBoundingBox<T>& b) {
+  return a.IntersectionArea(b);
+}
+
+template <typename T>
+inline T UnionArea(const DocumentBoundingBox<T>& a,
+                   const DocumentBoundingBox<T>& b) {
+  return a.UnionArea(b);
 }
 
 }  // namespace core

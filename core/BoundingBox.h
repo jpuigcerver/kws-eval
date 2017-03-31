@@ -56,11 +56,12 @@ struct BoundingBox {
   }
 
   inline T IntersectionArea(const BoundingBox& other) const {
-    const T& x_overlap = std::max<T>(0, std::min<T>(x + w, other.x + other.w) -
-                                     std::max<T>(x, other.x));
-    const T& y_overlap = std::max<T>(0, std::min<T>(y + h, other.y + other.h) -
-                                     std::max<T>(y, other.y));
-    return x_overlap * y_overlap;
+    const T x1 = std::max<T>(x, other.x);
+    const T x2 = std::min<T>(x + w, other.x + other.w);
+    const T y1 = std::max<T>(y, other.y);
+    const T y2 = std::min<T>(y + h, other.y + other.h);
+    if (x1 > x2 || y1 > y2) return 0;
+    else return (x2 - x1) * (y2 - y1);
   }
 
   inline T UnionArea(const BoundingBox& other) const {
