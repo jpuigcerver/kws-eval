@@ -16,10 +16,10 @@ TEST(DocumentBoundingBoxTest, Constructor) {
   EXPECT_EQ(b1.y, 2);
   EXPECT_EQ(b1.w, 3);
   EXPECT_EQ(b1.h, 4);
-  EXPECT_EQ(b1.document, "doc");
+  EXPECT_EQ("doc", b1.document);
 
   // Explicit constructor
-  DocumentBoundingBox<int> b2(1, 2, 3, 4, "doc");
+  DocumentBoundingBox<int> b2("doc", 1, 2, 3, 4);
   EXPECT_EQ(b2.x, 1);
   EXPECT_EQ(b2.y, 2);
   EXPECT_EQ(b2.w, 3);
@@ -40,10 +40,10 @@ TEST(DocumentBoundingBoxTest, Constructor) {
 }
 
 TEST(DocumentBoundingBoxTest, Comparison) {
-  DocumentBoundingBox<int> b1(1, 2, 3, 4, "doc1");
-  DocumentBoundingBox<int> b2(1, 2, 3, 5, "doc1");
+  DocumentBoundingBox<int> b1("doc1", 1, 2, 3, 4);
+  DocumentBoundingBox<int> b2("doc1", 1, 2, 3, 5);
   DocumentBoundingBox<int> b3(b2);
-  DocumentBoundingBox<int> b4(1, 2, 3, 4, "doc2");
+  DocumentBoundingBox<int> b4("doc2", 1, 2, 3, 4);
   EXPECT_NE(b1, b2);  // b1 != b2
   EXPECT_EQ(b2, b3);  // b2 == b3
   EXPECT_LT(b1, b2);  // b1.h < b2.h
@@ -60,12 +60,12 @@ TEST(DocumentBoundingBoxTest, Comparison) {
 TEST(DocumentBoundingBoxTest, Geometry) {
   // T = int
   {
-    DocumentBoundingBox<int> b0(4, 4, 0, 0, "doc1");
-    DocumentBoundingBox<int> b1(0, 1, 4, 5, "doc1");
+    DocumentBoundingBox<int> b0("doc1", 4, 4, 0, 0);
+    DocumentBoundingBox<int> b1("doc1", 0, 1, 4, 5);
     DocumentBoundingBox<int> b2(b1);
-    DocumentBoundingBox<int> b3(99, 99, 99, 99, "doc1");
-    DocumentBoundingBox<int> b4(-1, 0, 3, 4, "doc1");
-    DocumentBoundingBox<int> b5(0, 1, 4, 5, "doc2");  // same coord, diff docs
+    DocumentBoundingBox<int> b3("doc1", 99, 99, 99, 99);
+    DocumentBoundingBox<int> b4("doc1", -1, 0, 3, 4);
+    DocumentBoundingBox<int> b5("doc2", 0, 1, 4, 5);  // same coord, diff docs
 
     // Intersection area
     EXPECT_EQ(b1.IntersectionArea(b0), 0);
@@ -87,12 +87,12 @@ TEST(DocumentBoundingBoxTest, Geometry) {
 
   // T = unsigned int
   {
-    DocumentBoundingBox<unsigned int> b0(4, 4, 0, 0, "doc1");
-    DocumentBoundingBox<unsigned int> b1(0, 1, 4, 5, "doc1");
+    DocumentBoundingBox<unsigned int> b0("doc1", 4, 4, 0, 0);
+    DocumentBoundingBox<unsigned int> b1("doc1", 0, 1, 4, 5);
     DocumentBoundingBox<unsigned int> b2(b1);
-    DocumentBoundingBox<unsigned int> b3(99, 99, 99, 99, "doc1");
-    DocumentBoundingBox<unsigned int> b4(2, 3, 3, 4, "doc1");
-    DocumentBoundingBox<unsigned int> b5(0, 1, 4, 5, "doc2");
+    DocumentBoundingBox<unsigned int> b3("doc1", 99, 99, 99, 99);
+    DocumentBoundingBox<unsigned int> b4("doc1", 2, 3, 3, 4);
+    DocumentBoundingBox<unsigned int> b5("doc2", 0, 1, 4, 5);
 
     // Intersection area
     EXPECT_EQ(b1.IntersectionArea(b0), 0);
@@ -114,7 +114,7 @@ TEST(DocumentBoundingBoxTest, Geometry) {
 }
 
 TEST(DocumentBoundingBoxTest, Streams) {
-  DocumentBoundingBox<int> b1(1, 2, 3, 4, "doc");
+  DocumentBoundingBox<int> b1("doc", 1, 2, 3, 4);
   DocumentBoundingBox<int> b2;
   // Output stream
   std::ostringstream oss;

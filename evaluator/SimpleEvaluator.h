@@ -86,7 +86,7 @@ class SimpleEvaluator : public Evaluator<RE, HE> {
     std::vector<std::pair<OverlapScore, const RE*>> scored_overlaps;
     for (const RE& ref : refs.FindOverlapping(hyp)) {
       OverlapScore score = scorer_->operator()(ref, hyp);
-      if (score.Valid()) {
+      if (score.IsValid()) {
         scored_overlaps.push_back(std::make_pair(score, &ref));
       }
     }

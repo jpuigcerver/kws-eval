@@ -1,0 +1,7 @@
+IF(GTEST_FOUND AND GMOCK_FOUND AND WITH_TESTS)
+
+ADD_EXECUTABLE(PlainTextReaderTest PlainTextReaderTest.cc)
+TARGET_LINK_LIBRARIES(PlainTextReaderTest ${GMOCK_MAIN_LIBRARIES})
+ADD_TEST(PlainTextReaderTest PlainTextReaderTest)
+
+ENDIF()

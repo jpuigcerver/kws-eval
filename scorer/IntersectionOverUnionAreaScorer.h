@@ -1,5 +1,5 @@
-#ifndef SCORER_INTERSECTIONOVERHYPOTHESISAREA_H_
-#define SCORER_INTERSECTIONOVERHYPOTHESISAREA_H_
+#ifndef SCORER_INTERSECTIONOVERUNIONAREA_H_
+#define SCORER_INTERSECTIONOVERUNIONAREA_H_
 
 #include "scorer/Scorer.h"
 
@@ -7,20 +7,21 @@ namespace kws {
 namespace scorer {
 
 template <class RE, class HE>
-class IntersectionOverHypothesisAreaScorer : public Scorer<RE, HE> {
+class IntersectionOverUnionAreaScorer : public Scorer<RE, HE> {
  public:
   typedef RE RefEvent;
   typedef HE HypEvent;
   typedef typename Scorer<RE, HE>::Result Result;
 
-  IntersectionOverHypothesisAreaScorer(float threshold) :
+  IntersectionOverUnionAreaScorer(float threshold) :
       threshold_(threshold) {}
 
-  ~IntersectionOverHypothesisAreaScorer() override {}
+  ~IntersectionOverUnionAreaScorer() override {}
 
   Result operator()(const RefEvent& ref, const HypEvent& hyp) override {
-    if (hyp.Area() > 0) {
-      const float val = IntersectionArea(ref, hyp) / (1.0f * hyp.Area());
+    const float union_area = UnionArea(ref, hyp);
+    if (union_area > 0) {
+      const float val = IntersectionArea(ref, hyp) / union_area;
       if (val >= threshold_) return Result{1.0f, 0.0f, 0.0f};
     }
     return Result{0.0f, 1.0f, 1.0f};
@@ -35,4 +36,4 @@ class IntersectionOverHypothesisAreaScorer : public Scorer<RE, HE> {
 }  // namespace scorer
 }  // namespace kws
 
-#endif  // SCORER_INTERSECTIONOVERHYPOTHESISAREA_H_
+#endif  // SCORER_INTERSECTIONOVERUNIONAREA_H_

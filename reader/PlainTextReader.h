@@ -2,6 +2,7 @@
 #define READER_PLAINTEXTREADER_H_
 
 #include <algorithm>
+#include <fstream>
 #include <vector>
 
 namespace kws {
@@ -12,9 +13,13 @@ class PlainTextReader {
  public:
   bool Read(std::istream* is, std::vector<E>* events) const {
     events->clear();
+    *is >> std::ws;
+    while (is->good() && is->peek() == '#') {
+      while (is->good() && is->get() != '\n') {}
+      *is >> std::ws;
+    }
     E event;
     while(*is >> event) {
-      std::cerr << event << std::endl;
       events->push_back(event);
     }
     std::sort(events->begin(), events->end(), std::greater<E>());

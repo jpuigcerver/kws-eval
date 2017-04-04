@@ -10,10 +10,13 @@ namespace core {
 template <typename L>
 struct Event {
   typedef L Location;
+  typedef typename Location::Type Type;
   std::string query;
   L location;
 
   Event() {}
+
+  virtual ~Event() {}
 
   Event(const std::string& q, const Location& loc) :
       query(q), location(loc) {}
@@ -43,6 +46,8 @@ struct Event {
   inline bool operator>=(const Event& other) const {
     return (*this > other) || (*this == other);
   }
+
+  inline Type Area() const { return location.Area(); }
 };
 
 template <typename L>
@@ -59,8 +64,18 @@ std::istream& operator>>(std::istream& is, Event<L>& event) {
 
 template <typename L>
 std::ostream& operator<<(std::ostream& os, const Event<L>& event) {
-  os << event.query << " " << event.location << std::endl;
+  os << event.query << " " << event.location;
   return os;
+}
+
+template <class E1, class E2>
+typename E1::Type IntersectionArea(const E1& a, const E2& b) {
+  return IntersectionArea(a.location, b.location);
+}
+
+template <class E1, class E2>
+typename E1::Type UnionArea(const E1& a, const E2& b) {
+  return UnionArea(a.location, b.location);
 }
 
 }  // namespace core

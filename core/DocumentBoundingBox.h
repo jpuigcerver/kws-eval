@@ -14,8 +14,8 @@ struct DocumentBoundingBox : public BoundingBox<T> {
 
   DocumentBoundingBox() {}
 
-  DocumentBoundingBox(const T& x, const T& y, const T& w, const T& h,
-                      const std::string& p) :
+  DocumentBoundingBox(const std::string& p,
+                      const T& x, const T& y, const T& w, const T& h) :
       BoundingBox<T>(x, y, w, h), document(p) { }
 
   inline bool operator==(const DocumentBoundingBox& other) const {

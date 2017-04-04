@@ -1,0 +1,24 @@
+IF(GTEST_FOUND AND GMOCK_FOUND AND WITH_TESTS)
+
+ADD_EXECUTABLE(IntersectionOverHypothesisAreaScorerTest
+  IntersectionOverHypothesisAreaScorerTest.cc)
+TARGET_LINK_LIBRARIES(IntersectionOverHypothesisAreaScorerTest
+  ${GMOCK_MAIN_LIBRARIES} ${CMAKE_THREAD_LIBS_INIT})
+ADD_TEST(IntersectionOverHypothesisAreaScorerTest
+  IntersectionOverHypothesisAreaScorerTest)
+
+ADD_EXECUTABLE(IntersectionOverUnionAreaScorerTest
+  IntersectionOverUnionAreaScorerTest.cc)
+TARGET_LINK_LIBRARIES(IntersectionOverUnionAreaScorerTest
+  ${GMOCK_MAIN_LIBRARIES} ${CMAKE_THREAD_LIBS_INIT})
+ADD_TEST(IntersectionOverUnionAreaScorerTest
+  IntersectionOverUnionAreaScorerTest)
+
+ADD_EXECUTABLE(SoftIntersectionOverUnionAreaScorerTest
+  SoftIntersectionOverUnionAreaScorerTest.cc)
+TARGET_LINK_LIBRARIES(SoftIntersectionOverUnionAreaScorerTest
+  ${GMOCK_MAIN_LIBRARIES} ${CMAKE_THREAD_LIBS_INIT})
+ADD_TEST(SoftIntersectionOverUnionAreaScorerTest
+  SoftIntersectionOverUnionAreaScorerTest)
+
+ENDIF()
