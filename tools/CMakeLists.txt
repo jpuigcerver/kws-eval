@@ -1,5 +1,5 @@
-ADD_EXECUTABLE(KwsEvalIcdar17 KwsEvalIcdar17.cc)
+ADD_EXECUTABLE(Icdar17KwsEval Icdar17KwsEval.cc)
 
 INSTALL(
-  TARGETS KwsEvalIcdar17
+  TARGETS Icdar17KwsEval
   RUNTIME DESTINATION bin)

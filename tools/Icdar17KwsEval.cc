@@ -26,7 +26,8 @@ typedef ScoredEvent<std::string, DocumentBoundingBox<uint16_t>> HypEvent;
 
 int main(int argc, char** argv) {
   if (argc != 2 && argc != 3) {
-    std::cerr << "Usage: " << argv[0] << " reference hypothesis" << std::endl;
+    std::cerr << "Usage: " << argv[0] << " references [hypotheses]"
+              << std::endl;
     return 1;
   }
 

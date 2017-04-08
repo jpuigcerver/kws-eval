@@ -1,9 +1,12 @@
 # kws-eval
+
+[![Build Status](https://travis-ci.com/jpuigcerver/kws-eval.svg?token=HF64eTvPxEUcjjUPXpgm&branch=master)](https://travis-ci.com/jpuigcerver/kws-eval)
+
 Tools for the evaluation of Keyword Spotting.
 
 ## Tools
-### KwsEvalIcdar17
-This is the official evaluation tool for the ICDAR2017 Handwritten Keyword 
+### Icdar17KwsEval
+This is the official evaluation tool for the ICDAR2017 Handwritten Keyword
 Spotting Competition (ICDAR2017 KWS).
 
 This computes the (Global) Average Precision and Mean Average Precision given
@@ -18,11 +21,11 @@ queryID documentID BBx BBy BBw BBh [score]
 queryID documentID BBx BBy BBw BBh [score]
 ```
 
-`BBx`, `BBy`, `BBw` and `BBh` refer to the x,y-coordinates, width and height of 
+`BBx`, `BBy`, `BBw` and `BBh` refer to the x,y-coordinates, width and height of
 the bounding box of the reference/detected object.
 
 The score field is only present in the hypotheses file, and is used to sort
-the detected objects IN DECREASING ORDER. Thus, higher scores mean higher 
+the detected objects IN DECREASING ORDER. Thus, higher scores mean higher
 confidence.
 
 
@@ -50,5 +53,3 @@ Google Mock.
 This will install the tools to the default CMake install path
 (typically /usr/local). If you want to change the installation directory,
 pass  `-DCMAKE_INSTALL_PREFIX=/path/to/your/destination` to the `cmake` call.
-
-
