@@ -1,21 +1,26 @@
 language: cpp
+dist: trusty
 
 os:
   - linux
 
-dist: trusty
+compiler:
+  - gcc
+  - clang
 
-addons:
-  apt:
-    sources:
-      - ubuntu-toolchain-r-test
-    packages:
-      - cmake
-      - libgtest-dev
-      - google-mock
+install:
+  - |
+    ## Install Google Test & Google Mock from sources
+    git clone https://github.com/google/googletest
+    cd googletest
+    mkdir build && cd build
+    cmake -DBUILD_GTEST=OFF -DBUILD_GMOCK=ON CMAKE_INSTALL_PREFIX=$HOME/.local ..
+    make -j4
+    make install
+    cd -
 
 script:
   - mkdir build && cd build
-  - CXX=$COMPILER cmake ..
+  - cmake -DGTEST_ROOT=$HOME/.local -DGMOCK_ROOT=$HOME/.local ..
   - make
   - make test
