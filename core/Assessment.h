@@ -4,6 +4,7 @@
 #include <algorithm>
 #include <cassert>
 #include <limits>
+#include <numeric>
 #include <utility>
 #include <vector>
 
