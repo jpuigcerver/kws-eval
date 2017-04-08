@@ -13,7 +13,7 @@ install:
     ## Install Google Test & Google Mock from sources
     git clone https://github.com/google/googletest
     cd googletest
-    mkdir build && cd build
+    mkdir -p build && cd build
     cmake -DBUILD_GTEST=OFF -DBUILD_GMOCK=ON CMAKE_INSTALL_PREFIX=$HOME/.local ..
     make -j4
     make install
