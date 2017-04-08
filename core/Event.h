@@ -7,75 +7,81 @@
 namespace kws {
 namespace core {
 
-template <typename L>
-struct Event {
-  typedef L Location;
-  typedef typename Location::Type Type;
-  std::string query;
-  L location;
+template <typename Q, typename L>
+class Event {
+ public:
+  typedef Q QType;
+  typedef L LType;
+  typedef typename LType::Type Type;
+  typedef Event<Q, L> Base;
 
   Event() {}
 
   virtual ~Event() {}
 
-  Event(const std::string& q, const Location& loc) :
-      query(q), location(loc) {}
+  Event(const QType& query, const LType& location) :
+      query_(query), location_(location) {}
 
-  inline bool operator==(const Event& other) const {
-    return query == other.query && location == other.location;
+  virtual const QType& Query() const { return query_; }
+
+  virtual QType& Query() { return query_; }
+
+  virtual const LType& Location() const { return location_; }
+
+  virtual LType& Location() { return location_; }
+
+  virtual bool operator==(const Event& other) const {
+    return query_ == other.query_ && location_ == other.location_;
   }
 
-  inline bool operator!=(const Event& other) const {
-    return query != other.query || location != other.location;
+  virtual bool operator!=(const Event& other) const {
+    return query_ != other.query_ || location_ != other.location_;
   }
 
-  inline bool operator<(const Event& other) const {
-    return (query == other.query && location < other.location) ||
-        (query < other.query);
+  virtual bool operator<(const Event& other) const {
+    return (query_ == other.query_ && location_ < other.location_) ||
+        (query_ < other.query_);
   }
 
-  inline bool operator>(const Event& other) const {
-    return (query == other.query && location > other.location) ||
-        (query > other.query);
+  virtual bool operator>(const Event& other) const {
+    return (other < *this);
   }
 
-  inline bool operator<=(const Event& other) const {
-    return (*this < other) || (*this == other);
+  virtual bool operator<=(const Event& other) const {
+    return !(*this > other);
   }
 
-  inline bool operator>=(const Event& other) const {
-    return (*this > other) || (*this == other);
+  virtual bool operator>=(const Event& other) const {
+    return !(*this < other);
   }
 
-  inline Type Area() const { return location.Area(); }
+  virtual Type Area() const { return location_.Area(); }
+
+ protected:
+  QType query_;
+  LType location_;
 };
 
-template <typename L>
-std::istream& operator>>(std::istream& is, Event<L>& event) {
-  // Skip lines started with #, these are comments.
-  is >> std::ws;
-  while (is.good() && is.peek() == '#') {
-    while (is.good() && is.get() != '\n') {}
-    is >> std::ws;
-  }
-  is >> event.query >> event.location >> std::ws;
+template <typename Q, typename L>
+std::istream& operator>>(std::istream& is, Event<Q, L>& event) {
+  is >> event.Query() >> event.Location();
   return is;
 }
 
-template <typename L>
-std::ostream& operator<<(std::ostream& os, const Event<L>& event) {
-  os << event.query << " " << event.location;
+template <typename Q, typename L>
+std::ostream& operator<<(std::ostream& os, const Event<Q, L>& event) {
+  os << event.Query() << " " << event.Location();
   return os;
 }
 
 template <class E1, class E2>
 typename E1::Type IntersectionArea(const E1& a, const E2& b) {
-  return IntersectionArea(a.location, b.location);
+  return IntersectionArea(a.Location(), b.Location());
 }
 
 template <class E1, class E2>
 typename E1::Type UnionArea(const E1& a, const E2& b) {
-  return UnionArea(a.location, b.location);
+  return UnionArea(a.Location(), b.Location());
 }
 
 }  // namespace core

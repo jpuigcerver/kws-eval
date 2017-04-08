@@ -8,59 +8,61 @@
 namespace kws {
 namespace core {
 
-template <typename L>
-struct ScoredEvent : public Event<L> {
-  float score;
+template <typename Q, typename L>
+class ScoredEvent : public Event<Q, L> {
+ public:
+  typedef Event<Q, L> Base;
 
   ScoredEvent() {}
 
-  ScoredEvent(const std::string& q, const L& loc, float s) :
-      Event<L>(q, loc), score(s) {}
+  explicit ScoredEvent(float s) : score_(s) {}
 
-  inline bool operator==(const ScoredEvent& other) const {
-    return score == other.score && Event<L>::operator==(other);
+  ScoredEvent(const Q& query, const L& location, float s) :
+      Event<Q, L>(query, location), score_(s) {}
+
+  virtual bool operator==(const ScoredEvent& other) const {
+    return score_ == other.score_ && Base::operator==(other);
   }
 
-  inline bool operator!=(const ScoredEvent& other) const {
-    return score != other.score || Event<L>::operator!=(other);
+  virtual bool operator!=(const ScoredEvent& other) const {
+    return score_ != other.score_ || Base::operator!=(other);
   }
 
-  inline bool operator<(const ScoredEvent& other) const {
-    if (score < other.score) return true;
-    else if (score > other.score) return false;
-    return Event<L>::operator<(other);
+  virtual bool operator<(const ScoredEvent& other) const {
+    if (score_ < other.score_) return true;
+    else if (score_ > other.score_) return false;
+    return Base::operator<(other);
   }
 
-  inline bool operator>(const ScoredEvent& other) const {
-    if (score > other.score) return true;
-    else if (score < other.score) return false;
-    return Event<L>::operator>(other);
+  virtual bool operator>(const ScoredEvent& other) const {
+    return (other < *this);
   }
 
-  inline bool operator<=(const ScoredEvent& other) const {
-    return (*this < other) || (*this == other);
+  virtual bool operator<=(const ScoredEvent& other) const {
+    return !(other > *this);
   }
 
-  inline bool operator>=(const ScoredEvent& other) const {
-    return (*this > other) || (*this == other);
+  virtual bool operator>=(const ScoredEvent& other) const {
+    return !(*this < other);
   }
+
+  virtual float Score() const { return score_; }
+
+  virtual float& Score() { return score_; }
+
+ private:
+  float score_;
 };
 
-template <typename L>
-std::istream& operator>>(std::istream& is, ScoredEvent<L>& event) {
-  // Skip lines started with #, these are comments.
-  is >> std::ws;
-  while (is.good() && is.peek() == '#') {
-    while (is.good() && is.get() != '\n') {}
-    is >> std::ws;
-  }
-  is >> event.query >> event.location >> event.score >> std::ws;
+template <class Q, class L>
+std::istream& operator>>(std::istream& is, ScoredEvent<Q, L>& event) {
+  is >> event.Query() >> event.Location() >> event.Score();
   return is;
 }
 
-template <typename L>
-std::ostream& operator<<(std::ostream& os, const ScoredEvent<L>& event) {
-  os << event.query << " " << event.location << " " << event.score;
+template <class Q, class L>
+std::ostream& operator<<(std::ostream& os, const ScoredEvent<Q, L>& event) {
+  os << event.Query() << " " << event.Location() << " " << event.Score();
   return os;
 }
 

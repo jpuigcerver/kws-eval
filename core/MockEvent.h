@@ -1,11 +1,16 @@
 #ifndef CORE_MOCKEVENT_H_
 #define CORE_MOCKEVENT_H_
 
+#include <string>
+
+#include "core/Event.h"
+#include "core/MockLocation.h"
+
 namespace kws {
 namespace core {
 namespace testing {
 
-class MockEvent {
+class MockEvent : public Event<std::string, MockLocation<int>> {
  public:
   MockEvent() {}
   virtual ~MockEvent() {}

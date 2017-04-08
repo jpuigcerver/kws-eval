@@ -1,8 +1,0 @@
-IF(GTEST_FOUND AND GMOCK_FOUND AND WITH_TESTS)
-
-ADD_EXECUTABLE(SimpleEvaluatorTest SimpleEvaluatorTest.cc)
-TARGET_LINK_LIBRARIES(SimpleEvaluatorTest
-  ${GMOCK_MAIN_LIBRARIES} ${CMAKE_THREAD_LIBS_INIT})
-ADD_TEST(SimpleEvaluatorTest SimpleEvaluatorTest)
-
-ENDIF()

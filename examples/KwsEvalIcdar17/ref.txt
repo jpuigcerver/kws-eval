@@ -1,0 +1,7 @@
+# QueryID DocumentID x y width height
+q1 d1 3 5 400 40
+q1 d1 6 100 350 35
+q2 d1 6 100 350 35
+q2 d1 3 5 400 40
+q2 d2 3 5 400 40
+q99 d99 0 0 300 20

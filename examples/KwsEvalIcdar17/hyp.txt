@@ -1,0 +1,15 @@
+# QueryID DocumentID x y width height score
+# 1st hypothesis is a perfect match with the BB of the whole line.
+# 2nd hypothesis is a repeated spot. This is ignored.
+# 3rd hypothesis is a false positive
+# 4th hypothesis is a true positive, since the overlap area > 0.5
+# 5th hypothesis is a false positive, since the overlap area < 0.5
+# 6th hypothesis is a repeated spot (4th). This is ignored.
+# 7th hypothesis is a false positive: matches bounding box, but diff query!
+q1 d1 3 5 400 40  -1.0
+q1 d1 3 5 400 40  -2.0
+q3 d1 5 5 35 55   -3.0
+q2 d1 50 90 60 35  -4.0
+q2 d1 50 80 60 35  -4.0
+q2 d1 50 100 60 35 -5.0
+q1 d2 3 5 400 40   -6.0

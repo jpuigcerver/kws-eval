@@ -7,18 +7,11 @@ TARGET_LINK_LIBRARIES(IntersectionOverHypothesisAreaScorerTest
 ADD_TEST(IntersectionOverHypothesisAreaScorerTest
   IntersectionOverHypothesisAreaScorerTest)
 
-ADD_EXECUTABLE(IntersectionOverUnionAreaScorerTest
-  IntersectionOverUnionAreaScorerTest.cc)
-TARGET_LINK_LIBRARIES(IntersectionOverUnionAreaScorerTest
+ADD_EXECUTABLE(SoftIntersectionOverHypothesisAreaScorerTest
+  SoftIntersectionOverHypothesisAreaScorerTest.cc)
+TARGET_LINK_LIBRARIES(SoftIntersectionOverHypothesisAreaScorerTest
   ${GMOCK_MAIN_LIBRARIES} ${CMAKE_THREAD_LIBS_INIT})
-ADD_TEST(IntersectionOverUnionAreaScorerTest
-  IntersectionOverUnionAreaScorerTest)
-
-ADD_EXECUTABLE(SoftIntersectionOverUnionAreaScorerTest
-  SoftIntersectionOverUnionAreaScorerTest.cc)
-TARGET_LINK_LIBRARIES(SoftIntersectionOverUnionAreaScorerTest
-  ${GMOCK_MAIN_LIBRARIES} ${CMAKE_THREAD_LIBS_INIT})
-ADD_TEST(SoftIntersectionOverUnionAreaScorerTest
-  SoftIntersectionOverUnionAreaScorerTest)
+ADD_TEST(SoftIntersectionOverHypothesisAreaScorerTest
+  SoftIntersectionOverHypothesisAreaScorerTest)
 
 ENDIF()

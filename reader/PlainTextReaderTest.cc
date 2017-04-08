@@ -41,13 +41,13 @@ TEST(PlainTextReader, Integers) {
 }
 
 TEST(PlainTextReader, EventDocumentBoundingBox) {
-  PlainTextReader<Event<DocumentBoundingBox<int>>> reader;
+  PlainTextReader<Event<std::string, DocumentBoundingBox<int>>> reader;
   {
     // File with comments but no events.
     std::istringstream iss(
         "# This is a comment line\n"
         "# This is another comment line\n");
-    std::vector<Event<DocumentBoundingBox<int>>> v;
+    std::vector<Event<std::string, DocumentBoundingBox<int>>> v;
     EXPECT_TRUE(reader.Read(&iss, &v));
     EXPECT_THAT(v, IsEmpty());
   }
@@ -56,11 +56,11 @@ TEST(PlainTextReader, EventDocumentBoundingBox) {
     std::istringstream iss(
         "q1 d1 1 2 3 4\n"
         "q1 d2 4 3 2 1\n");
-    std::vector<Event<DocumentBoundingBox<int>>> v;
+    std::vector<Event<std::string, DocumentBoundingBox<int>>> v;
     EXPECT_TRUE(reader.Read(&iss, &v));
-    const Event<DocumentBoundingBox<int>> b1(
+    const Event<std::string, DocumentBoundingBox<int>> b1(
         "q1", DocumentBoundingBox<int>("d2", 4, 3, 2, 1));
-    const Event<DocumentBoundingBox<int>> b2(
+    const Event<std::string, DocumentBoundingBox<int>> b2(
         "q1", DocumentBoundingBox<int>("d1", 1, 2, 3, 4));
     EXPECT_THAT(v, ElementsAre(b1, b2));
   }
@@ -70,11 +70,11 @@ TEST(PlainTextReader, EventDocumentBoundingBox) {
         "# this is a comment\n"
         "q1 d1 1 2 3 4\n"
         "q1 d2 4 3 2 1\n");
-    std::vector<Event<DocumentBoundingBox<int>>> v;
+    std::vector<Event<std::string, DocumentBoundingBox<int>>> v;
     EXPECT_TRUE(reader.Read(&iss, &v));
-    const Event<DocumentBoundingBox<int>> b1(
+    const Event<std::string ,DocumentBoundingBox<int>> b1(
         "q1", DocumentBoundingBox<int>("d2", 4, 3, 2, 1));
-    const Event<DocumentBoundingBox<int>> b2(
+    const Event<std::string, DocumentBoundingBox<int>> b2(
         "q1", DocumentBoundingBox<int>("d1", 1, 2, 3, 4));
     EXPECT_THAT(v, ElementsAre(b1, b2));
   }
@@ -84,11 +84,11 @@ TEST(PlainTextReader, EventDocumentBoundingBox) {
         "# this is a comment\r\n"
         "q1 d1 1 2 3 4\r\n"
         "q1 d2 4 3 2 1\r\n");
-    std::vector<Event<DocumentBoundingBox<int>>> v;
+    std::vector<Event<std::string, DocumentBoundingBox<int>>> v;
     EXPECT_TRUE(reader.Read(&iss, &v));
-    const Event<DocumentBoundingBox<int>> b1(
+    const Event<std::string, DocumentBoundingBox<int>> b1(
         "q1", DocumentBoundingBox<int>("d2", 4, 3, 2, 1));
-    const Event<DocumentBoundingBox<int>> b2(
+    const Event<std::string, DocumentBoundingBox<int>> b2(
         "q1", DocumentBoundingBox<int>("d1", 1, 2, 3, 4));
     EXPECT_THAT(v, ElementsAre(b1, b2));
   }
@@ -97,13 +97,13 @@ TEST(PlainTextReader, EventDocumentBoundingBox) {
     std::istringstream iss(
         "# this is a comment\r\n"
         "q1 d1 1 2 3 4 q1 d2 4 3 2 1 q1 d2 2 2 3 4\r\n");
-    std::vector<Event<DocumentBoundingBox<int>>> v;
+    std::vector<Event<std::string, DocumentBoundingBox<int>>> v;
     EXPECT_TRUE(reader.Read(&iss, &v));
-    const Event<DocumentBoundingBox<int>> b1(
+    const Event<std::string, DocumentBoundingBox<int>> b1(
         "q1", DocumentBoundingBox<int>("d2", 4, 3, 2, 1));
-    const Event<DocumentBoundingBox<int>> b2(
+    const Event<std::string, DocumentBoundingBox<int>> b2(
         "q1", DocumentBoundingBox<int>("d2", 2, 2, 3, 4));
-    const Event<DocumentBoundingBox<int>> b3(
+    const Event<std::string, DocumentBoundingBox<int>> b3(
         "q1", DocumentBoundingBox<int>("d1", 1, 2, 3, 4));
     EXPECT_THAT(v, ElementsAre(b1, b2, b3));
   }
@@ -115,7 +115,7 @@ TEST(PlainTextReader, EventDocumentBoundingBox) {
         "q2 d1 5 6 7 8\n"
         "q1 d2 9 10 11\n"  // <- Missing h coordinate!
         "q1 d1 13 14 15 16\n");
-    std::vector<Event<DocumentBoundingBox<int>>> v;
+    std::vector<Event<std::string, DocumentBoundingBox<int>>> v;
     EXPECT_FALSE(reader.Read(&iss, &v));
   }
 }

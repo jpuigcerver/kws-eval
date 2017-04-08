@@ -2,108 +2,80 @@
 #define CORE_EVENTSET_H_
 
 #include <list>
+#include <set>
 #include <string>
 #include <unordered_map>
-#include "core/Event.h"
 
 namespace kws {
 namespace core {
+
+template <typename Q, typename L>
+class Event;
 
 // Generic implementation of a set of Event objects
 template <class E>
 class EventSet {
  public:
-  typedef typename E::Location Location;
+  typedef E EventType;
+  typedef typename E::QType QType;
+  typedef typename E::LType LType;
   typedef std::list<E> EventList;
+  typedef std::set<E> EventSetInternal;
 
-  EventSet() {}
+  EventSet() : size_(0) {}
+
+  virtual ~EventSet() {}
 
   template <typename I>
   EventSet(I begin, I end) {
     for (I it = begin; it != end; ++it) { Insert(*it); }
   }
 
-  void Insert(const E& event) {
-    EventList& l =
-        events_by_query_.insert(make_pair(event.query, EventList()))
-        .first->second;
-    l.push_back(event);
-  }
-
-  void Remove(const E& event) {
-    auto it = events_by_query_.find(event.query);
-    if (it != events_by_query_.end()) {
-      it->remove(event);
+  virtual void Insert(const EventType& event) {
+    EventSetInternal& qe =  events_by_query_.emplace(
+        event.Query(), EventSetInternal()).first->second;
+    if (qe.emplace(event).second) {
+      ++size_;
     }
   }
 
-  EventList FindOverlapping(const Event<Location>& event) const {
-    EventList result;
-    auto it = events_by_query_.find(event.query);
+  virtual void Clear() {
+    events_by_query_.clear();
+    size_ = 0;
+  }
+
+  virtual void Remove(const EventType& event) {
+    auto it = events_by_query_.find(event.Query());
+    if (it != events_by_query_.end()) {
+      size_ -= it->second.erase(event);
+    }
+  }
+
+  virtual EventList FindOverlapping(const Event<QType, LType>& event) const {
+    // Find all events with an intersection area > 0.
+    std::vector<std::pair<typename LType::Type, E>> aux;
+    auto it = events_by_query_.find(event.Query());
     if (it != events_by_query_.end()) {
       for (auto it2 = it->second.begin(); it2 != it->second.end(); ++it2) {
-        if (it2->location.IntersectionArea(event.location) > 0)
-          result.push_back(event);
-      }
-    }
-    return result;
-  }
-
- private:
-  std::unordered_map<std::string, EventList> events_by_query_;
-};
-
-// Specialization of the EventSet when the Event objects are templated with
-// the DocumentBoundingBox location
-template <template<class> class E, typename T>
-class EventSet<E<DocumentBoundingBox<T>>> {
-public:
-  typedef DocumentBoundingBox<T> Location;
-  typedef std::list<E<Location>> EventList;
-
-  EventSet() {}
-
-  template <typename I>
-  EventSet(I begin, I end) {
-    for (I it = begin; it != end; ++it) { Insert(*it); }
-  }
-
-  void Insert(const E<Location>& event) {
-    DocumentToEventsMap& p =
-        documents_by_query_.insert(make_pair(event.query, DocumentToEventsMap()))
-        .first->second;
-    EventList& l = p.insert(make_pair(event.query, EventList())).first->second;
-    l.push_back(event);
-  }
-
-  void Remove(const E<Location>& event) {
-    auto p = documents_by_query_.find(event.query);
-    if (p != documents_by_query_.end()) {
-      auto l = p->second.find(event.location.document);
-      if (l != p->second.end()) {
-        l->second.remove(event);
-      }
-    }
-  }
-
-  EventList FindOverlapping(const Event<Location>& event) const {
-    EventList result;
-    auto p = documents_by_query_.find(event.query);
-    if (p != documents_by_query_.end()) {
-      auto l = p->second.find(event.location.document);
-      if (l != p->second.end()) {
-        for (auto it = l->second.begin(); it != l->second.end(); ++it) {
-          result.push_back(event);
+        const auto intersection_area =
+            it2->Location().IntersectionArea(event.Location());
+        if (intersection_area > 0) {
+          aux.push_back(std::make_pair(intersection_area, event));
         }
       }
     }
+    // Sort the events by decreasing intersection area.
+    std::sort(aux.begin(), aux.end(), std::greater<std::pair<typename LType::Type, E>>());
+    EventList result;
+    for (const auto& a : aux) { result.push_back(a.second); }
     return result;
   }
 
+  virtual const size_t& Size() const { return size_; }
+
 private:
-  typedef std::unordered_map<std::string, EventList> DocumentToEventsMap;
-  typedef std::unordered_map<std::string, DocumentToEventsMap> QueryToDocumentsMap;
-  QueryToDocumentsMap documents_by_query_;
+  std::unordered_map<QType, EventSetInternal> events_by_query_;
+  size_t size_;
 };
 
 }  // namespace core

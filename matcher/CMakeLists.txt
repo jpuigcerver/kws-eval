@@ -1,0 +1,8 @@
+IF(GTEST_FOUND AND GMOCK_FOUND AND WITH_TESTS)
+
+ADD_EXECUTABLE(SimpleMatcherTest SimpleMatcherTest.cc)
+TARGET_LINK_LIBRARIES(SimpleMatcherTest
+  ${GMOCK_MAIN_LIBRARIES} ${CMAKE_THREAD_LIBS_INIT})
+ADD_TEST(SimpleMatcherTest SimpleMatcherTest)
+
+ENDIF()
