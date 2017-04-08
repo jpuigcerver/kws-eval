@@ -1,6 +1,6 @@
 # kws-eval
 
-[![Build Status](https://travis-ci.com/jpuigcerver/kws-eval.svg?token=HF64eTvPxEUcjjUPXpgm&branch=master)](https://travis-ci.com/jpuigcerver/kws-eval)
+[![Build Status](https://travis-ci.org/jpuigcerver/kws-eval.svg?branch=master)](https://travis-ci.org/jpuigcerver/kws-eval)
 
 Tools for the evaluation of Keyword Spotting.
 
