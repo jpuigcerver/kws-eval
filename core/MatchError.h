@@ -12,6 +12,8 @@ public:
 
   MatchError(float fp, float fn) : fp_(fp), fn_(fn) {}
 
+  virtual ~MatchError() {}
+
   inline bool operator==(const MatchError& other) const {
     return fp_ == other.fp_ && fn_ == other.fn_;
   }
