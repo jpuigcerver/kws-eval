@@ -16,6 +16,6 @@ addons:
 
 script:
   - mkdir build && cd build
-  - CXX=$COMPILER ccmake ..
+  - CXX=$COMPILER cmake ..
   - make
   - make test
