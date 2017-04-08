@@ -3,6 +3,7 @@ dist: trusty
 
 os:
   - linux
+  - osx
 
 compiler:
   - gcc
