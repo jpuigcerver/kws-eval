@@ -26,7 +26,7 @@ TEST(PlainTextReader, Integers) {
       "\n");
     std::vector<int> v;
     EXPECT_TRUE(reader.Read(&iss, &v));
-    EXPECT_THAT(v, ElementsAre(3, 2, 1));  // Elements are sorted!
+    EXPECT_THAT(v, ElementsAre(1, 2, 3));
   }
   {
     // Comment line in between the text, should fail
@@ -59,9 +59,9 @@ TEST(PlainTextReader, EventDocumentBoundingBox) {
     std::vector<Event<std::string, DocumentBoundingBox<int>>> v;
     EXPECT_TRUE(reader.Read(&iss, &v));
     const Event<std::string, DocumentBoundingBox<int>> b1(
-        "q1", DocumentBoundingBox<int>("d2", 4, 3, 2, 1));
-    const Event<std::string, DocumentBoundingBox<int>> b2(
         "q1", DocumentBoundingBox<int>("d1", 1, 2, 3, 4));
+    const Event<std::string, DocumentBoundingBox<int>> b2(
+        "q1", DocumentBoundingBox<int>("d2", 4, 3, 2, 1));
     EXPECT_THAT(v, ElementsAre(b1, b2));
   }
   {
@@ -72,10 +72,10 @@ TEST(PlainTextReader, EventDocumentBoundingBox) {
         "q1 d2 4 3 2 1\n");
     std::vector<Event<std::string, DocumentBoundingBox<int>>> v;
     EXPECT_TRUE(reader.Read(&iss, &v));
-    const Event<std::string ,DocumentBoundingBox<int>> b1(
-        "q1", DocumentBoundingBox<int>("d2", 4, 3, 2, 1));
-    const Event<std::string, DocumentBoundingBox<int>> b2(
+    const Event<std::string, DocumentBoundingBox<int>> b1(
         "q1", DocumentBoundingBox<int>("d1", 1, 2, 3, 4));
+    const Event<std::string ,DocumentBoundingBox<int>> b2(
+        "q1", DocumentBoundingBox<int>("d2", 4, 3, 2, 1));
     EXPECT_THAT(v, ElementsAre(b1, b2));
   }
   {
@@ -87,9 +87,9 @@ TEST(PlainTextReader, EventDocumentBoundingBox) {
     std::vector<Event<std::string, DocumentBoundingBox<int>>> v;
     EXPECT_TRUE(reader.Read(&iss, &v));
     const Event<std::string, DocumentBoundingBox<int>> b1(
-        "q1", DocumentBoundingBox<int>("d2", 4, 3, 2, 1));
-    const Event<std::string, DocumentBoundingBox<int>> b2(
         "q1", DocumentBoundingBox<int>("d1", 1, 2, 3, 4));
+    const Event<std::string, DocumentBoundingBox<int>> b2(
+        "q1", DocumentBoundingBox<int>("d2", 4, 3, 2, 1));
     EXPECT_THAT(v, ElementsAre(b1, b2));
   }
   {
@@ -100,11 +100,11 @@ TEST(PlainTextReader, EventDocumentBoundingBox) {
     std::vector<Event<std::string, DocumentBoundingBox<int>>> v;
     EXPECT_TRUE(reader.Read(&iss, &v));
     const Event<std::string, DocumentBoundingBox<int>> b1(
-        "q1", DocumentBoundingBox<int>("d2", 4, 3, 2, 1));
-    const Event<std::string, DocumentBoundingBox<int>> b2(
-        "q1", DocumentBoundingBox<int>("d2", 2, 2, 3, 4));
-    const Event<std::string, DocumentBoundingBox<int>> b3(
         "q1", DocumentBoundingBox<int>("d1", 1, 2, 3, 4));
+ const Event<std::string, DocumentBoundingBox<int>> b2(
+        "q1", DocumentBoundingBox<int>("d2", 4, 3, 2, 1));
+    const Event<std::string, DocumentBoundingBox<int>> b3(
+        "q1", DocumentBoundingBox<int>("d2", 2, 2, 3, 4));
     EXPECT_THAT(v, ElementsAre(b1, b2, b3));
   }
   {

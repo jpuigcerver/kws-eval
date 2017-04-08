@@ -35,7 +35,8 @@ protected:
 };
 
 std::ostream& operator<<(std::ostream& oss, const MatchError& errors) {
-  oss << "MatchError[fp=" << errors.FP() << ", fn=" << errors.FN() << "]";
+  oss << "MatchError[fp=" << errors.FP() << ", fn=" << errors.FN()
+      << ", nh=" << errors.NH() << ", nr=" << errors.NR() << "]";
   return oss;
 }
 

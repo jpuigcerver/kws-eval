@@ -29,8 +29,7 @@ class ScoredEvent : public Event<Q, L> {
   }
 
   virtual bool operator<(const ScoredEvent& other) const {
-    if (score_ < other.score_) return true;
-    else if (score_ > other.score_) return false;
+    if (score_ != other.score_) return score_ < other.score_;
     return Base::operator<(other);
   }
 

@@ -60,7 +60,7 @@ class EventSet {
         const auto intersection_area =
             it2->Location().IntersectionArea(event.Location());
         if (intersection_area > 0) {
-          aux.push_back(std::make_pair(intersection_area, event));
+          aux.push_back(std::make_pair(intersection_area, *it2));
         }
       }
     }

@@ -27,13 +27,20 @@ struct DocumentBoundingBox : public BoundingBox<T> {
   }
 
   inline bool operator<(const DocumentBoundingBox& other) const {
-    return (document == document && BoundingBox<T>::operator<(other)) ||
-        document < other.document;
+    if (document != other.document) return document < other.document;
+    return BoundingBox<T>::operator<(other);
   }
 
   inline bool operator>(const DocumentBoundingBox& other) const {
-    return (document == document && BoundingBox<T>::operator>(other)) ||
-        document > other.document;
+    return (other < *this);
+  }
+
+  inline bool operator<=(const DocumentBoundingBox& other) const {
+    return !(*this > other);
+  }
+
+  inline bool operator>=(const DocumentBoundingBox& other) const {
+    return !(*this < other);
   }
 
   inline T IntersectionArea(const DocumentBoundingBox& other) const {
@@ -45,13 +52,6 @@ struct DocumentBoundingBox : public BoundingBox<T> {
 
   inline T UnionArea(const DocumentBoundingBox& other) const {
     return BoundingBox<T>::Area() + other.Area() - IntersectionArea(other);
-  }
-
-  inline float CenterDistance(const DocumentBoundingBox& other) const {
-    if (document == other.document)
-      return BoundingBox<T>::CenterDistance(other);
-    else
-      return std::numeric_limits<float>::infinity();
   }
 };
 

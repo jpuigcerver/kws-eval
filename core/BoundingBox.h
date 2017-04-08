@@ -26,29 +26,22 @@ struct BoundingBox {
   }
 
   inline bool operator<(const BoundingBox& other) const {
-    const T dy = y - other.y, dx = x - other.x;
-    const T dh = h - other.h, dw = w - other.w;
-    if (dy != 0) return dy < 0;
-    else if (dx != 0) return dx < 0;
-    else if (dw != 0) return dw < 0;
-    else return dh < 0;
+    if (x != other.x) return x < other.x;
+    if (y != other.y) return y < other.y;
+    if (w != other.w) return w < other.w;
+    return h < other.h;
   }
 
   inline bool operator>(const BoundingBox& other) const {
-    const T dy = y - other.y, dx = x - other.x;
-    const T dh = h - other.h, dw = w - other.w;
-    if (dy != 0) return dy > 0;
-    else if (dx != 0) return dx > 0;
-    else if (dw != 0) return dw > 0;
-    else return dh > 0;
+    return (other < *this);
   }
 
   inline bool operator<=(const BoundingBox& other) const {
-    return (*this < other) || (*this == other);
+    return !(*this > other);
   }
 
   inline bool operator>=(const BoundingBox& other) const {
-    return (*this > other) || (*this == other);
+    return !(*this < other);
   }
 
   inline T Area() const {
@@ -66,14 +59,6 @@ struct BoundingBox {
 
   inline T UnionArea(const BoundingBox& other) const {
     return Area() + other.Area() - IntersectionArea(other);
-  }
-
-  inline float CenterDistance(const BoundingBox& other) const {
-    const float a_x = (x + w) / 2.0, a_y = (y + h) / 2.0;
-    const float b_x = (other.x + other.w) / 2.0,
-        b_y = (other.y + other.h) / 2.0;
-    const float c_x = a_x - b_x, c_y = a_y - b_y;
-    return sqrt(c_x * c_x + c_y * c_y);
   }
 };
 

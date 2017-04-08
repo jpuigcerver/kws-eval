@@ -22,7 +22,6 @@ class PlainTextReader {
     while(*is >> event) {
       events->push_back(event);
     }
-    std::sort(events->begin(), events->end(), std::greater<E>());
     return is->eof();
   }
 

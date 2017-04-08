@@ -39,8 +39,8 @@ class Event {
   }
 
   virtual bool operator<(const Event& other) const {
-    return (query_ == other.query_ && location_ < other.location_) ||
-        (query_ < other.query_);
+    if (query_ != other.query_) return query_ < other.query_;
+    return location_ < other.location_;
   }
 
   virtual bool operator>(const Event& other) const {
