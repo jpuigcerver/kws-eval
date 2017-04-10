@@ -12,6 +12,6 @@ ADD_EXECUTABLE(SoftBoundingBoxScorerTest
 TARGET_LINK_LIBRARIES(SoftBoundingBoxScorerTest
   ${GMOCK_MAIN_LIBRARIES} ${CMAKE_THREAD_LIBS_INIT})
 ADD_TEST(SoftBoundingBoxScorerTest
-  SoftIntersectionOverHypothesisAreaScorerTest)
+	SoftBoundingBoxScorerTest)
 
 ENDIF()
