@@ -8,7 +8,7 @@
 #include "core/ScoredEvent.h"
 #include "matcher/SimpleMatcher.h"
 #include "reader/PlainTextReader.h"
-#include "scorer/IntersectionOverHypothesisAreaScorer.h"
+#include "scorer/ThresholdBoundingBoxScorer.h"
 
 using kws::core::CollapseMatches;
 using kws::core::ComputeAP;

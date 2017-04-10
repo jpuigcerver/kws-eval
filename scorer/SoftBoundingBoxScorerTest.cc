@@ -2,7 +2,7 @@
 #include <gmock/gmock.h>
 
 #include "core/MockEvent.h"
-#include "scorer/SoftIntersectionOverHypothesisAreaScorer.h"
+#include "scorer/SoftBoundingBoxScorer.h"
 
 using kws::core::testing::MockEvent;
 using kws::core::MatchError;

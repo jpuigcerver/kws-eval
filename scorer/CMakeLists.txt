@@ -1,17 +1,17 @@
 IF(GTEST_FOUND AND GMOCK_FOUND AND WITH_TESTS)
 
-ADD_EXECUTABLE(IntersectionOverHypothesisAreaScorerTest
-  IntersectionOverHypothesisAreaScorerTest.cc)
-TARGET_LINK_LIBRARIES(IntersectionOverHypothesisAreaScorerTest
+ADD_EXECUTABLE(ThresholdBoundingBoxScorerTest
+        ThresholdBoundingBoxScorerTest.cc)
+TARGET_LINK_LIBRARIES(ThresholdBoundingBoxScorerTest
   ${GMOCK_MAIN_LIBRARIES} ${CMAKE_THREAD_LIBS_INIT})
-ADD_TEST(IntersectionOverHypothesisAreaScorerTest
-  IntersectionOverHypothesisAreaScorerTest)
+ADD_TEST(ThresholdBoundingBoxScorerTest
+        ThresholdBoundingBoxScorerTest)
 
-ADD_EXECUTABLE(SoftIntersectionOverHypothesisAreaScorerTest
-  SoftIntersectionOverHypothesisAreaScorerTest.cc)
-TARGET_LINK_LIBRARIES(SoftIntersectionOverHypothesisAreaScorerTest
+ADD_EXECUTABLE(SoftBoundingBoxScorerTest
+        SoftBoundingBoxScorerTest.cc)
+TARGET_LINK_LIBRARIES(SoftBoundingBoxScorerTest
   ${GMOCK_MAIN_LIBRARIES} ${CMAKE_THREAD_LIBS_INIT})
-ADD_TEST(SoftIntersectionOverHypothesisAreaScorerTest
+ADD_TEST(SoftBoundingBoxScorerTest
   SoftIntersectionOverHypothesisAreaScorerTest)
 
 ENDIF()
