@@ -21,8 +21,8 @@ using kws::matcher::SimpleMatcher;
 using kws::reader::PlainTextReader;
 using kws::scorer::IntersectionOverHypothesisAreaScorer;
 
-typedef Event<std::string, DocumentBoundingBox<uint16_t>> RefEvent;
-typedef ScoredEvent<std::string, DocumentBoundingBox<uint16_t>> HypEvent;
+typedef Event<std::string, DocumentBoundingBox<uint32_t>> RefEvent;
+typedef ScoredEvent<std::string, DocumentBoundingBox<uint32_t>> HypEvent;
 
 int main(int argc, char** argv) {
   if (argc != 2 && argc != 3) {
