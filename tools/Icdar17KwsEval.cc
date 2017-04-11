@@ -2,6 +2,10 @@
 #include <fstream>
 #include <unordered_map>
 
+#ifdef WITH_GLOG
+#include <glog/logging.h>
+#endif
+
 #include "core/Assessment.h"
 #include "core/Event.h"
 #include "core/DocumentBoundingBox.h"
@@ -25,6 +29,10 @@ typedef Event<std::string, DocumentBoundingBox<uint32_t>> RefEvent;
 typedef ScoredEvent<std::string, DocumentBoundingBox<uint32_t>> HypEvent;
 
 int main(int argc, char** argv) {
+#ifdef WITH_GLOG
+  google::InitGoogleLogging(argv[0]);
+#endif
+
   if (argc != 2 && argc != 3) {
     std::cerr << "Usage: " << argv[0] << " references [hypotheses]"
               << std::endl;
@@ -57,6 +65,11 @@ int main(int argc, char** argv) {
 
   // Sort hypotheses in decreasing order of their score.
   std::sort(hyp_events.begin(), hyp_events.end(), std::greater<HypEvent>());
+
+  #ifdef WITH_GLOG
+  LOG(INFO) << "Number of reference events read = " << ref_events.size();
+  LOG(INFO) << "Number of hypothesis events read = " << hyp_events.size();
+  #endif
 
   // Match hypothesis events against the references.
   IntersectionOverHypothesisAreaScorer<RefEvent, HypEvent> scorer(0.5);
