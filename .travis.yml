@@ -27,7 +27,7 @@ install:
       make install
       cd ../..
     fi;
-    if [ -n "$GTEST_ROOT" ]; then
+    if [ -n "$GLOG_ROOT" ]; then
       ## Install Google Glog
       git clone git@github.com:google/glog.git
       cd glog
