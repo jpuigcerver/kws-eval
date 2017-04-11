@@ -9,25 +9,35 @@ compiler:
   - gcc
   - clang
 
+env:
+  - GLOG_ROOT="" GTEST_ROOT=""
+  - GLOG_ROOT="" GTEST_ROOT="$HOME/.local"
+  - GLOG_ROOT="$HOME/.local" GTEST_ROOT=""
+  - GLOG_ROOT="$HOME/.local" GTEST_ROOT="$HOME/.local"
+
 install:
   - |
-    ## Install Google Test & Google Mock from sources
-    git clone https://github.com/google/googletest
-    cd googletest
-    mkdir -p build && cd build
-    cmake -DBUILD_GTEST=OFF -DBUILD_GMOCK=ON -DCMAKE_INSTALL_PREFIX=$HOME/.local ..
-    make -j4
-    make install
-    cd ../..
-    ## Install Google Glog
-    git clone git@github.com:google/glog.git
-    cd glog
-    ./configure --prefix=$HOME/.local
-    make && make install
-    cd ..
+    if [ -n "$GTEST_ROOT" ]; then
+      ## Install Google Test & Google Mock from sources
+      git clone https://github.com/google/googletest
+      cd googletest
+      mkdir -p build && cd build
+      cmake -DBUILD_GTEST=OFF -DBUILD_GMOCK=ON -DCMAKE_INSTALL_PREFIX=$GTEST_ROOT ..
+      make -j4
+      make install
+      cd ../..
+    fi;
+    if [ -n "$GTEST_ROOT" ]; then
+      ## Install Google Glog
+      git clone git@github.com:google/glog.git
+      cd glog
+      ./configure --prefix=$GLOG_ROOT
+      make && make install
+      cd ..
+    fi;
 
 script:
   - mkdir -p build && cd build
-  - cmake -DGTEST_ROOT=$HOME/.local -DGMOCK_ROOT=$HOME/.local -DGLOG_ROOT=$HOME/.local ..
+  - cmake -DGTEST_ROOT=$GTEST_ROOT -DGMOCK_ROOT=$GTEST_ROOT -DGLOG_ROOT=$GLOG_ROOT ..
   - make
   - make test
