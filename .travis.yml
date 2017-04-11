@@ -15,6 +15,15 @@ env:
   - GLOG_ROOT="$HOME/.local" GTEST_ROOT=""
   - GLOG_ROOT="$HOME/.local" GTEST_ROOT="$HOME/.local"
 
+matrix:
+  exclude:
+  - compiler: clang
+    env: GLOG_ROOT="" GTEST_ROOT=""
+  - compiler: clang
+    env: GLOG_ROOT="" GTEST_ROOT="$HOME/.local"
+  - compiler: clang
+    env: GLOG_ROOT="$HOME/.local" GTEST_ROOT=""
+
 install:
   - |
     if [ -n "$GTEST_ROOT" ]; then
@@ -29,7 +38,7 @@ install:
     fi;
     if [ -n "$GLOG_ROOT" ]; then
       ## Install Google Glog
-      git clone git@github.com:google/glog.git
+      git clone https://github.com/google/glog.git
       cd glog
       ./configure --prefix=$GLOG_ROOT
       make && make install
