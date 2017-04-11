@@ -72,10 +72,10 @@ function(_gmock_find_library _name)
   find_library(${_name}
     NAMES ${ARGN}
     HINTS
-      $ENV{GMOCK_ROOT}
-      ${GMOCK_ROOT}
+    $ENV{GMOCK_ROOT}
+    ${GMOCK_ROOT}
     PATH_SUFFIXES ${_gmock_libpath_suffixes}
-  )
+    )
   mark_as_advanced(${_name})
 endfunction()
 
@@ -99,9 +99,9 @@ endif()
 
 find_path(GMOCK_INCLUDE_DIR gmock/gmock.h
   HINTS
-    $ENV{GMOCK_ROOT}/include
-    ${GMOCK_ROOT}/include
-)
+  $ENV{GMOCK_ROOT}/include
+  ${GMOCK_ROOT}/include
+  )
 mark_as_advanced(GMOCK_INCLUDE_DIR)
 
 if(MSVC AND GMOCK_MSVC_SEARCH STREQUAL "MD")
