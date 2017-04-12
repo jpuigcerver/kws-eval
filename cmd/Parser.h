@@ -36,7 +36,7 @@ class Parser {
     oss << "Usage: " << prog_;
     // Show options. Note: Only shows the first 5 options, and then [ ... ]
     if (!opts_.empty()) {
-      oss << " [options]";
+      oss << " [ options ]";
     }
     // Show mandatory arguments
     for (auto a : args_) {

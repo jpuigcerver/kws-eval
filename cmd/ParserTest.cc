@@ -30,7 +30,7 @@ TEST(ParserTest, RegisterOption) {
   EXPECT_TRUE(p.RegisterOption("str", "help for str option", &opt_str_val));
 
   // Options are shown in alphabetical order
-  EXPECT_EQ("Usage: prog [options]\n\n"
+  EXPECT_EQ("Usage: prog [ options ]\n\n"
             "Options:\n"
             "  --bool : help for bool option (type = bool, value = \"false\")\n"
             "  --int  : help for int option (type = int32_t, value = \"-1\")\n"
