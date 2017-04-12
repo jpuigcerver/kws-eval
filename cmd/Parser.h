@@ -35,14 +35,8 @@ class Parser {
     // Show program name
     oss << "Usage: " << prog_;
     // Show options. Note: Only shows the first 5 options, and then [ ... ]
-    {
-      int i = 0; auto it = opts_.begin();
-      for (; it != opts_.end() && i < 5; ++it, ++i) {
-        oss << " [ " << it->second->Name() << " ]";
-      }
-      if (it != opts_.end()) {
-        oss << " [ ... ]";
-      }
+    if (!opts_.empty()) {
+      oss << " [options]";
     }
     // Show mandatory arguments
     for (auto a : args_) {
