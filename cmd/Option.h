@@ -1,11 +1,17 @@
 #ifndef CMD_OPTION_H
 #define CMD_OPTION_H
 
+#include <cassert>
+#include <iomanip>
 #include <iostream>
 #include <string>
 
+#include "core/TypeInfo.h"
+
 namespace kws {
 namespace cmd {
+
+using kws::core::TypeInfo;
 
 class BaseOption {
  public:
@@ -32,8 +38,9 @@ class Option : public BaseOption {
 
   std::string Help(size_t w = 0) const override {
     std::ostringstream oss;
-    oss << "--" << std::setw(w) << std::left << name_ << " : " << help_
-        << " (default = " << *value_ << ")";
+    oss << std::setw(w) << std::left << name_ << " : " << help_
+        << " (type = " << TypeInfo<T>::Name()
+        << ", value = \"" << *value_ << "\")";
     return oss.str();
   }
 
@@ -62,8 +69,9 @@ class Option : public BaseOption {
 template <>
 std::string Option<bool>::Help(size_t w) const {
   std::ostringstream oss;
-  oss << "--" << std::setw(w) << std::left << name_ << " : " << help_
-      << " (default = " << (*value_ ? "true" : "false") << ")";
+  oss << std::setw(w) << std::left << name_ << " : " << help_
+      << " (type = " << TypeInfo<bool>::Name()
+      << ", value = \"" << (*value_ ? "true" : "false") << "\")";
   return oss.str();
 }
 
@@ -78,6 +86,13 @@ bool Option<bool>::Parse(const std::string& str) {
   } else {
     return false;
   }
+}
+
+// Specialization for std::string
+template <>
+bool Option<std::string>::Parse(const std::string &str) {
+  std::istringstream iss(str);
+  return std::getline(iss, *value_, '\0').eof();
 }
 
 }  // namespace cmd

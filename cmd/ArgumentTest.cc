@@ -17,13 +17,13 @@ TEST(ArgumentTest, IsBoolean) {
 TEST(ArgumentTest, Help) {
   int arg_int_val = -1;
   Argument<int> arg_int("int", "int help", &arg_int_val);
-  EXPECT_EQ("int : int help (default = -1)", arg_int.Help());
-  EXPECT_EQ("int        : int help (default = -1)", arg_int.Help(10));
+  EXPECT_EQ("int : int help (type = int32_t)", arg_int.Help());
+  EXPECT_EQ("int        : int help (type = int32_t)", arg_int.Help(10));
 
   bool arg_bool_val = true;
   Argument<bool> arg_bool("bool", "bool help", &arg_bool_val);
-  EXPECT_EQ("bool : bool help (default = true)", arg_bool.Help());
-  EXPECT_EQ("bool       : bool help (default = true)", arg_bool.Help(10));
+  EXPECT_EQ("bool : bool help (type = bool)", arg_bool.Help());
+  EXPECT_EQ("bool       : bool help (type = bool)", arg_bool.Help(10));
 }
 
 TEST(ArgumentTest, Parse) {

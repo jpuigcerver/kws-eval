@@ -13,7 +13,10 @@ namespace cmd {
 
 class Parser {
  public:
-  explicit Parser(const std::string& prog) : prog_(prog) {}
+  explicit Parser(const std::string& prog) : prog_(prog), desc_("") {}
+
+  Parser(const std::string& prog, const std::string& description) :
+    prog_(prog), desc_(description) {}
 
   ~Parser() {
     for (auto kw : opts_) {
@@ -35,7 +38,7 @@ class Parser {
     {
       int i = 0; auto it = opts_.begin();
       for (; it != opts_.end() && i < 5; ++it, ++i) {
-        oss << " [ --" << it->first << " ]";
+        oss << " [ " << it->second->Name() << " ]";
       }
       if (it != opts_.end()) {
         oss << " [ ... ]";
@@ -55,10 +58,46 @@ class Parser {
       }
     }
     oss << std::endl;
+
+    // Show description, if available.
+    if (!desc_.empty()) {
+      oss << std::endl;
+      oss << "Description:" << std::endl;
+      oss << desc_ << std::endl;
+    }
+
+    // Determine the maximum width of the names.
+    size_t max_w = 0;
+    for (auto o : opts_) { max_w = std::max(max_w, o.second->Name().size()); }
+    for (auto a : args_) { max_w = std::max(max_w, a->Name().size()); }
+    for (auto a : opt_args_) { max_w = std::max(max_w, a->Name().size()); }
+
+
+    if (!args_.empty() || !opt_args_.empty()) {
+      oss << std::endl;
+      oss << "Arguments:" << std::endl;
+      for (const auto& a : args_) {
+        oss << "  " << a->Help(max_w)  << std::endl;
+      }
+      for (const auto& a : opt_args_) {
+        oss << "  " << a->Help(max_w)  << std::endl;
+      }
+    }
+
+    if (!opts_.empty()) {
+      oss << std::endl;
+      oss << "Options:" << std::endl;
+      for (const auto& o : opts_) {
+        oss << "  " << o.second->Help(max_w)  << std::endl;
+      }
+    }
+
     return oss.str();
   }
 
   bool Parse(const int argc, const char** argv) {
+    bool show_help = false;
+
     int i = 1; // skip argv[0]
     // Parse OPTIONS
     while (i < argc) {
@@ -66,6 +105,7 @@ class Parser {
       if (arg.length() < 2 || arg[0] != '-') break;
       ++i;   // Options have values, point to the next argument.
       if (arg == "--") { break; }   // Skip options section with "--".
+      if (arg == "--help") { show_help = true; continue; }
       const std::string opt_name = arg.substr(2);
       auto opt_it = opts_.find(opt_name);
       if (opt_it == opts_.end()) {
@@ -85,6 +125,11 @@ class Parser {
         return false;
       }
     }
+    // If --help was used, just exit.
+    if (show_help) {
+      std::cerr << Help() << std::endl;
+      exit(0);
+    }
     // Parse mandatory ARGUMENTS
     size_t j = 0;
     for (j = 0; i < argc && j < args_.size(); ++i, ++j) {
@@ -96,8 +141,7 @@ class Parser {
     }
     // Check that all the mandatory positional cmd were given.
     if (j < args_.size()) {
-      std::cerr << "ERROR: Expecting " << args_.size()
-                << " positional cmd, but only " << j << " were given."
+      std::cerr << "ERROR: Missing " << args_.size() - j << " arguments."
                 << std::endl;
       return false;
     }
@@ -110,6 +154,7 @@ class Parser {
         return false;
       }
     }
+
     // Check that no extra positional cmd were given.
     if (i < argc) {
       const size_t max_args = args_.size() + opt_args_.size();
@@ -119,13 +164,15 @@ class Parser {
                 << std::endl;
       return false;
     }
+
     return true;
   }
 
   template <typename T>
   bool RegisterOption(const std::string& name, const std::string& help,
                       T* value) {
-    auto opt = new Option<T>(name, help, value);
+    if (name == "help") return false;  // reserved option name
+    auto opt = new Option<T>("--" + name, help, value);
     if (!opts_.emplace(name, opt).second) {
       delete opt;
       return false;
@@ -147,6 +194,7 @@ class Parser {
 
  private:
   const std::string prog_;
+  const std::string desc_;
   std::map<std::string, BaseOption*> opts_;
   std::vector<BaseOption*> args_;
   std::vector<BaseOption*> opt_args_;

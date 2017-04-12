@@ -2,9 +2,12 @@
 #define CMD_ARGUMENT_H
 
 #include "cmd/Option.h"
+#include "core/TypeInfo.h"
 
 namespace kws {
 namespace cmd {
+
+using kws::core::TypeInfo;
 
 template <typename T>
 class Argument : public Option<T> {
@@ -15,7 +18,7 @@ class Argument : public Option<T> {
   std::string Help(size_t w = 0) const override {
     std::ostringstream oss;
     oss << std::setw(w) << std::left << name_ << " : " << help_
-        << " (default = " << *value_ << ")";
+        << " (type = " << TypeInfo<T>::Name() << ")";
     return oss.str();
   }
 
@@ -33,7 +36,7 @@ class Argument<bool> : public Option<bool> {
   std::string Help(size_t w = 0) const override {
     std::ostringstream oss;
     oss << std::setw(w) << std::left << name_ << " : " << help_
-        << " (default = " << (*value_ ? "true" : "false") << ")";
+        << " (type = " << TypeInfo<bool>::Name() << ")";
     return oss.str();
   }
 
