@@ -22,7 +22,7 @@ TEST(PlainTextReader, Integers) {
     std::istringstream iss(
       "# this is a comment line\n"
       "# this is also a comment line\n"
-      "1 2 3\n"
+      "1\n2\n3\n"
       "\n");
     std::vector<int> v;
     EXPECT_TRUE(reader.Read(&iss, &v));
@@ -31,12 +31,13 @@ TEST(PlainTextReader, Integers) {
   {
     // Comment line in between the text, should fail
     std::istringstream iss(
-      "1 2 3\n"
+      "1\n2\n3\n"
       "# this is also a comment line\n"
-      "1 2 3\n"
+      "1\n2\n3\n"
       "\n");
     std::vector<int> v;
-    EXPECT_FALSE(reader.Read(&iss, &v));
+    EXPECT_TRUE(reader.Read(&iss, &v));
+    EXPECT_THAT(v, ElementsAre(1, 2, 3, 1, 2, 3));
   }
 }
 
@@ -83,7 +84,9 @@ TEST(PlainTextReader, EventDocumentBoundingBox) {
     std::istringstream iss(
         "# this is a comment\r\n"
         "q1 d1 1 2 3 4\r\n"
-        "q1 d2 4 3 2 1\r\n");
+        "# this is a comment\n"
+        "q1 d2 4 3 2 1\r\n"
+        "# this is a comment\n");
     std::vector<Event<std::string, DocumentBoundingBox<int>>> v;
     EXPECT_TRUE(reader.Read(&iss, &v));
     const Event<std::string, DocumentBoundingBox<int>> b1(
@@ -91,21 +94,6 @@ TEST(PlainTextReader, EventDocumentBoundingBox) {
     const Event<std::string, DocumentBoundingBox<int>> b2(
         "q1", DocumentBoundingBox<int>("d2", 4, 3, 2, 1));
     EXPECT_THAT(v, ElementsAre(b1, b2));
-  }
-  {
-    // Valid case with comments and events in a single line
-    std::istringstream iss(
-        "# this is a comment\r\n"
-        "q1 d1 1 2 3 4 q1 d2 4 3 2 1 q1 d2 2 2 3 4\r\n");
-    std::vector<Event<std::string, DocumentBoundingBox<int>>> v;
-    EXPECT_TRUE(reader.Read(&iss, &v));
-    const Event<std::string, DocumentBoundingBox<int>> b1(
-        "q1", DocumentBoundingBox<int>("d1", 1, 2, 3, 4));
- const Event<std::string, DocumentBoundingBox<int>> b2(
-        "q1", DocumentBoundingBox<int>("d2", 4, 3, 2, 1));
-    const Event<std::string, DocumentBoundingBox<int>> b3(
-        "q1", DocumentBoundingBox<int>("d2", 2, 2, 3, 4));
-    EXPECT_THAT(v, ElementsAre(b1, b2, b3));
   }
   {
     // Missing info
@@ -116,6 +104,9 @@ TEST(PlainTextReader, EventDocumentBoundingBox) {
         "q1 d2 9 10 11\n"  // <- Missing h coordinate!
         "q1 d1 13 14 15 16\n");
     std::vector<Event<std::string, DocumentBoundingBox<int>>> v;
+    ::testing::internal::CaptureStderr();
     EXPECT_FALSE(reader.Read(&iss, &v));
+    EXPECT_EQ("ERROR: Failed to read event from line 4\n",
+              ::testing::internal::GetCapturedStderr());
   }
 }

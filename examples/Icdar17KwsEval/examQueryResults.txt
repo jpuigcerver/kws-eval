@@ -1,0 +1,41 @@
+## Query set: {DONNERSTAGS, HUJUS, KUSNACHT, KUSSNACHT} ##
+#
+# WordID      ImageID        BBx  BBy  BBw BBh  Score
+#
+DONNERSTAGS   MM_2_068_001  1000  510  323 116  0.987
+HUJUS         MM_2_029_005  1004 1778  152 122  0.900
+DONNERSTAGS   MM_2_115_001   966  339  526 157  0.898
+KUSSNACHT     MM_1_032_008   848  809  189 101  0.888
+DONNERSTAGS   MM_1_076_001   495  218  222  64  0.780
+HUJUS         MM_1_098_010   358 2695  157  64  0.777
+KUSSNACHT     MM_2_054_008  1261 2471  284 138  0.770
+DONNERSTAGS   MM_2_062_001  1049  482  389 120  0.766
+HUJUS         MM_1_073_005   778  467  182 103  0.765
+HUJUS         MM_1_073_005   780  465  185 100  0.760
+KUSNACHT      MM_2_147_009  1017 1384  276  88  0.699
+KUSNACHT      MM_1_032_008   848  809  189 101  0.677
+HUJUS         MM_1_001_009   463 2206  260 278  0.666
+KUSNACHT      MM_2_147_009  1774  718  243  73  0.655
+HUJUS         MM_1_066_003   271 1228  161  85  0.633
+KUSSNACHT     MM_2_147_009  1017 1384  276  88  0.456
+KUSNACHT      MM_2_147_008  1742 2787  325  60  0.444
+KUSNACHT      MM_2_211_007   520 2936  419  95  0.333
+KUSSNACHT     MM_2_147_008  1742 2787  325  60  0.111
+KUSNACHT      MM_2_123_006   769  680  333 215  0.011
+#
+# The following occurrences appear in the Validation set:
+# 4 DONNERSTAGS, 18 HUJUS, 3 KUSNACHT, 2 KUSSNACHT.
+# 
+# Some bounding boxes fail to meet the 50% overlapping
+# criterion: the fifth spot of HUJUS and the last of KUSNACHT
+# 
+# Six spots are false positives: 3 KUSNACHT and 3 KUSSNACHT
+# 
+# The third and the fourth spots of HUJUS are hits for the 
+# very same line (and approximately the same BB).  Only the 
+# first one is considered (as a hit).
+#
+# 12 instances of HUJUS have not been spotted
+# 
+# Using the evaluation tools, the results achieved are:
+# AP=0.464, mAP=0.761
