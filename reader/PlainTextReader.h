@@ -16,13 +16,14 @@ class PlainTextReader {
     std::string buff;
     for (size_t n = 1; std::getline(*is, buff); ++n) {
       std::istringstream iss(buff);
-      // Skip whitespaces 
+      // Skip whitespaces
       iss >> std::ws;
       if (iss.peek() == '#') continue;   // Comment line
       if (iss.eof()) continue;           // Empty line
       // Read event, and consume all whitespaces at the end of the line.
       E event;
-      iss >> event >> std::ws;
+      iss >> event;
+      if (!iss.eof()) iss >> std::ws;
       if (iss.fail() || !iss.eof()) {
         std::cerr << "ERROR: Failed to read event from line " << n << std::endl;
         return false;
