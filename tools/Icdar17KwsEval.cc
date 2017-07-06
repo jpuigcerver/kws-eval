@@ -30,6 +30,15 @@ using kws::scorer::IntersectionOverHypothesisAreaScorer;
 typedef Event<std::string, DocumentBoundingBox<uint32_t>> RefEvent;
 typedef ScoredEvent<std::string, DocumentBoundingBox<uint32_t>> HypEvent;
 
+template <typename E, typename C>
+void filter_events(const C& queryset, std::vector<E>* events) {
+  std::vector<E> events_aux = *events;
+  events->clear();
+  for (const auto& e : events_aux) {
+    if (queryset.count(e.Query()) > 0) events->push_back(e);
+  }
+}
+
 int main(int argc, const char** argv) {
 #ifdef WITH_GLOG
   google::InitGoogleLogging(argv[0]);
@@ -38,6 +47,7 @@ int main(int argc, const char** argv) {
   std::string ref_filename = "";
   std::string hyp_filename = "";
   std::string queryset_filename = "";
+  std::string querygroups_filename = "";
   std::string matches_filename = "";
   bool interpolated_precision = true;
   bool trapezoid_integral = true;
@@ -62,6 +72,11 @@ int main(int argc, const char** argv) {
       "dump_matches",
       "Dump the raw matches to this file.",
       &matches_filename);
+  cmd_parser.RegisterOption(
+      "query_groups",
+      "File containing the set of query groups to consider in the mAP. "
+      "This option supersedes the queries read from the file --query_set.",
+      &querygroups_filename);
   // Arguments
   cmd_parser.RegisterArgument(
       "references",
@@ -110,37 +125,73 @@ int main(int argc, const char** argv) {
   std::cerr << "INFO: Number of hypothesis events read = " << hyp_events.size()
             << std::endl;
 
+  std::map<std::string, std::string> query2group;
+  std::map<std::string, std::vector<std::string>> group2query;
+
   // If a queryset filename was given, filter out events from queries not in
   // this file.
-  if (!queryset_filename.empty()) {
+  if (!queryset_filename.empty() && querygroups_filename.empty()) {
     std::ifstream qfs(queryset_filename, std::ios_base::in);
     if (!qfs.is_open()) {
       std::cerr << "ERROR: Query set file \"" << queryset_filename
                 << "\" could not be read!" << std::endl;
       return 1;
     }
-    std::set<std::string> qs; std::string q;
-    while(qfs >> q) { qs.insert(q); }
+    std::string q;
+    while(qfs >> q) { query2group[q] = q; }
     qfs.close();
-    std::cerr << "INFO: " << qs.size() << " queries were read from \""
+    std::cerr << "INFO: " << query2group.size() << " queries were read from \""
               << queryset_filename << "\"" << std::endl;
+  } else if (!querygroups_filename.empty()) {
+    std::ifstream qfs(querygroups_filename, std::ios_base::in);
+    if (!qfs.is_open()) {
+      std::cerr << "ERROR: Query groups file \"" << querygroups_filename
+                << "\" could not be read!" << std::endl;
+      return 1;
+    }
+    std::string line, s;
+    while (std::getline(qfs, line)) {
+      std::vector<std::string> fields;
+      std::istringstream iss(line);
+      while (iss >> s) { fields.push_back(s); }
+      if (fields.size() < 2) {
+        std::cerr << "ERROR: Query groups file \"" << querygroups_filename
+                  << "\" has a wrong format!" << std::endl;
+        return 1;
+      }
+      for (size_t i = 1; i < fields.size(); ++i) {
+        query2group[fields[i]] = fields[0];
+      }
+    }
+    qfs.close();
+    std::cerr << "INFO: " << query2group.size() << " queries were read from \""
+              << querygroups_filename << "\"" << std::endl;
+  }
 
+  if (!query2group.empty()) {
     // Filter out reference events.
-    std::vector<RefEvent> ref_events_aux = ref_events;
-    ref_events.clear();
-    for (const auto& e : ref_events_aux) {
-      if (qs.count(e.Query()) > 0) ref_events.push_back(e);
+    const size_t num_ref_events = ref_events.size();
+    filter_events(query2group, &ref_events);
+    if (num_ref_events != ref_events.size()) {
+      std::cerr << "INFO: Number of kept reference events = "
+                << ref_events.size() << std::endl;
     }
-    std::cerr << "INFO: Number of kept reference events = "
-              << ref_events.size() << std::endl;
-
-    std::vector<HypEvent> hyp_events_aux = hyp_events;
-    hyp_events.clear();
-    for (const auto& e : hyp_events_aux) {
-      if (qs.count(e.Query()) > 0) hyp_events.push_back(e);
+    // Filter out hypothesis events.
+    const size_t num_hyp_events = hyp_events.size();
+    filter_events(query2group, &hyp_events);
+    if (num_hyp_events != hyp_events.size()) {
+      std::cerr << "INFO: Number of kept hypothesis events = "
+                << hyp_events.size() << std::endl;
     }
-    std::cerr << "INFO: Number of kept hypothesis events = "
-              << hyp_events.size() << std::endl;
+    // Add values to the group2query map
+    for (const auto& kv : query2group) {
+      group2query.emplace(kv.second, std::vector<std::string>())
+          .first->second.push_back(kv.first);
+    }
+    if (!querygroups_filename.empty()) {
+      std::cerr << "INFO: " << group2query.size() << " groups were read "
+                << "from \"" << querygroups_filename << "\"" << std::endl;
+    }
   }
 
   // Sort hypotheses in decreasing order of their score.
@@ -161,6 +212,10 @@ int main(int argc, const char** argv) {
     }
     for (const auto& m : matches) {
       mfs << m << std::endl;
+    }
+    mfs << "#### REPEATED MATCHES ####" << std::endl;
+    for (const auto& m : matcher.GetRepeatedMatches()) {
+      mfs << "## " << m << std::endl;
     }
     mfs.close();
   }
@@ -198,14 +253,16 @@ int main(int argc, const char** argv) {
   }
   // Compute MEAN Average Precision
   {
-    // First, split the matches according to their query ID
+    // First, split the matches according to their query/group ID
     std::unordered_map<std::string, std::list<Match<RefEvent, HypEvent>>>
         query_to_matches;
     for (const auto& m : matches) {
       const std::string& query = m.HasRef()
           ? m.GetRef().Query()
           : m.GetHyp().Query();
-      query_to_matches.emplace(query, std::list<Match<RefEvent, HypEvent>>())
+      query_to_matches.emplace(
+              (query2group.count(query) ? query2group[query] : query),
+              std::list<Match<RefEvent, HypEvent>>())
           .first->second.push_back(m);
     }
     // Sum the AP of each individual query
@@ -216,7 +273,8 @@ int main(int argc, const char** argv) {
       ComputePrecisionAndRecall(collapsed_errors,
                                 interpolated_precision,
                                 &pr_curve, &rc_curve);
-      sumAP += ComputeAP(pr_curve, rc_curve, trapezoid_integral);
+      const float aux = ComputeAP(pr_curve, rc_curve, trapezoid_integral);
+      sumAP += aux;
     }
     // Print MEAN Average Precision
     std::cout << "mAP = "

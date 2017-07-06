@@ -38,7 +38,8 @@ class SimpleMatcher : public Matcher<RE, HE> {
     for (const RE& ref : refs) refs_set_->Insert(ref);
     // Add all references to the unmatched references set.
     std::set<RE> unmatched_refs(refs.begin(), refs.end());
-
+    // Store matched hypothesis with already matched reference here.
+    repeated_matches_.clear();
     Result result;
     for (const HE& hyp : hyps) {
       const auto overlapping_refs = refs_set_->FindOverlapping(hyp);
@@ -51,13 +52,17 @@ class SimpleMatcher : public Matcher<RE, HE> {
           // penalize either precision or recall, even if the reference was
           // matched before...
           matched_hyp = true;
+          const auto m = kws::core::Match<RE,HE>(ref, hyp, errors);
           // ... although, we don't penalize multiple matches against the
           // same reference, we MUST NOT increase the precision/recall either.
           if (unmatched_refs.find(ref) != unmatched_refs.end()) {
             unmatched_refs.erase(ref);
-            result.push_back(kws::core::Match<RE,HE>(ref, hyp, errors));
+            result.push_back(m);
             // This hypothesis cannot be matched again.
             break;
+          } else {
+            // Keep the match, just for debugging purposes.
+            repeated_matches_.push_back(m);
           }
         }
       }
@@ -77,9 +82,14 @@ class SimpleMatcher : public Matcher<RE, HE> {
     return result;
   }
 
+  const Result& GetRepeatedMatches() const {
+    return repeated_matches_;
+  }
+
  private:
   Scorer<RE, HE>* scorer_;
   std::unique_ptr<EventSet<RE>> refs_set_;
+  Result repeated_matches_;
 };
 
 }  // namespace matcher
