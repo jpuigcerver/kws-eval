@@ -13,7 +13,7 @@
 #include "core/ScoredEvent.h"
 #include "matcher/SimpleMatcher.h"
 #include "reader/PlainTextReader.h"
-#include "scorer/ThresholdBoundingBoxScorer.h"
+#include "scorer/IntersectionOverHypothesisAreaScorer.h"
 
 using kws::cmd::Parser;
 using kws::core::CollapseMatches;

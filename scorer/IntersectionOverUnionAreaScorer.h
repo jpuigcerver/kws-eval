@@ -1,5 +1,5 @@
-#ifndef SCORER_THRESHOLDBOUNDINGBOXSCORER_H_
-#define SCORER_THRESHOLDBOUNDINGBOXSCORER_H_
+#ifndef SCORER_INTERSECTIONOVERUNIONAREASCORER_H_
+#define SCORER_INTERSECTIONOVERUNIONAREASCORER_H_
 
 #ifdef WITH_GLOG
 #include <glog/logging.h>
@@ -13,16 +13,16 @@ namespace scorer {
 using kws::core::MatchError;
 
 template <class RE, class HE>
-class IntersectionOverHypothesisAreaScorer : public Scorer<RE, HE> {
+class IntersectionOverUnionAreaScorer : public Scorer<RE, HE> {
  public:
-  IntersectionOverHypothesisAreaScorer(float threshold) :
+  explicit IntersectionOverUnionAreaScorer(float threshold) :
       threshold_(threshold) {}
 
-  ~IntersectionOverHypothesisAreaScorer() override {}
+  ~IntersectionOverUnionAreaScorer() override {}
 
   MatchError operator()(const RE& ref, const HE& hyp) override {
-    if (hyp.Area() > 0) {
-      const float val = IntersectionArea(ref, hyp) / (1.0f * hyp.Area());
+    if (ref.Query() == hyp.Query() && hyp.Area() > 0) {
+      const float val = IntersectionArea(ref, hyp) / (1.0f * UnionArea(ref, hyp));
 #if defined(WITH_GLOG) && defined(WITH_GLOG_TRACE)
       DLOG(INFO) << "Evaluating match:" << std::endl
                  << "Ref = " << ref << std::endl
@@ -43,4 +43,4 @@ class IntersectionOverHypothesisAreaScorer : public Scorer<RE, HE> {
 }  // namespace scorer
 }  // namespace kws
 
-#endif  // SCORER_THRESHOLDBOUNDINGBOXSCORER_H_
+#endif  // SCORER_INTERSECTIONOVERUNIONAREASCORER_H_
