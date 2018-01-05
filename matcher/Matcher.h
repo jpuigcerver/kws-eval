@@ -11,6 +11,8 @@ namespace matcher {
 template <class RE, class HE>
 class Matcher {
  public:
+  typedef RE RefEvent;
+  typedef HE HypEvent;
   typedef typename std::vector<kws::core::Match<RE, HE>> Result;
 
   virtual ~Matcher() {}

@@ -1,13 +1,13 @@
 #include <gtest/gtest.h>
 
 #include "core/DocumentBoundingBoxEventSet.h"
-#include "core/Event.h"
+#include "core/ShapedEvent.h"
 
 using kws::core::DocumentBoundingBox;
 using kws::core::EventSet;
-using kws::core::Event;
+using kws::core::ShapedEvent;
 
-typedef Event<int, DocumentBoundingBox<int>> DummyDocEvent;
+typedef ShapedEvent<int, DocumentBoundingBox<int>> DummyDocEvent;
 
 TEST(DocumentBoundingBoxEventSetTest, Tests) {
   DummyDocEvent e1(1, DocumentBoundingBox<int>("d1", 1, 1, 1, 1));

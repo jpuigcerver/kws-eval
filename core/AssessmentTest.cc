@@ -20,7 +20,7 @@ using testing::IsEmpty;
 using testing::ElementsAre;
 
 typedef Event<int, DummyLocation> RefEvent;
-typedef ScoredEvent<int, DummyLocation> HypEvent;
+typedef ScoredEvent<RefEvent> HypEvent;
 typedef Match<RefEvent, HypEvent> DummyMatch;
 
 TEST(AssessmentTest, CollapseMatches) {

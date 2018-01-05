@@ -1,10 +1,12 @@
 #ifndef CORE_DOCUMENTBOUNDINGBOXEVENTSET_H
 #define CORE_DOCUMENTBOUNDINGBOXEVENTSET_H
 
+#include <algorithm>
 #include <list>
 #include <set>
 #include <string>
 #include <unordered_map>
+#include <vector>
 
 #include "core/DocumentBoundingBox.h"
 
@@ -12,7 +14,7 @@ namespace kws {
 namespace core {
 
 template <class Q, class T>
-class Event;
+class ShapedEvent;
 
 template <class E>
 class EventSet;
@@ -63,7 +65,7 @@ class EventSet<E<Q, DocumentBoundingBox<T>>> {
     }
   }
 
-  virtual EventList FindOverlapping(const Event<QType, LType> &event) const {
+  virtual EventList FindOverlapping(const ShapedEvent<QType, LType> &event) const {
     // Find all events with an intersection area > 0.
     std::vector<std::pair<typename LType::Type, EventType>> aux;
     auto p = documents_by_query_.find(event.Query());
@@ -87,7 +89,7 @@ class EventSet<E<Q, DocumentBoundingBox<T>>> {
     return result;
   }
 
-  virtual const size_t& Size() const { return size_; }
+  virtual size_t Size() const { return size_; }
 
  private:
   typedef std::unordered_map<std::string, EventSetInternal> DocumentToEventsMap;

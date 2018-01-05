@@ -3,6 +3,7 @@
 
 #include <algorithm>
 #include <fstream>
+#include <sstream>
 #include <vector>
 
 namespace kws {

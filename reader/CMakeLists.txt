@@ -1,8 +1,10 @@
+ADD_LIBRARY(reader INTERFACE)
+TARGET_SOURCES(reader INTERFACE
+  ${CMAKE_CURRENT_SOURCE_DIR}/PlainTextReader.h)
+
 IF(GTEST_FOUND AND GMOCK_FOUND AND WITH_TESTS)
-
-ADD_EXECUTABLE(PlainTextReaderTest PlainTextReaderTest.cc)
-TARGET_LINK_LIBRARIES(PlainTextReaderTest
-  ${GMOCK_MAIN_LIBRARIES} ${CMAKE_THREAD_LIBS_INIT})
-ADD_TEST(PlainTextReaderTest PlainTextReaderTest)
-
+  ADD_EXECUTABLE(PlainTextReaderTest PlainTextReaderTest.cc PlainTextReader.h)
+  TARGET_LINK_LIBRARIES(PlainTextReaderTest
+    core ${GMOCK_MAIN_LIBRARIES} ${CMAKE_THREAD_LIBS_INIT})
+  ADD_TEST(PlainTextReaderTest PlainTextReaderTest)
 ENDIF()

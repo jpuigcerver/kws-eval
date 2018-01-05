@@ -4,7 +4,7 @@
 #include <list>
 #include <set>
 #include <string>
-#include <unordered_map>
+#include <set>
 
 namespace kws {
 namespace core {
@@ -12,7 +12,9 @@ namespace core {
 template <typename Q, typename L>
 class Event;
 
-// Generic implementation of a set of Event objects
+template <typename Q, typename L>
+class ShapedEvent;
+
 template <class E>
 class EventSet {
  public:
@@ -20,9 +22,8 @@ class EventSet {
   typedef typename E::QType QType;
   typedef typename E::LType LType;
   typedef std::list<E> EventList;
-  typedef std::set<E> EventSetInternal;
 
-  EventSet() : size_(0) {}
+  EventSet() {}
 
   virtual ~EventSet() {}
 
@@ -32,26 +33,36 @@ class EventSet {
   }
 
   virtual void Insert(const EventType& event) {
-    EventSetInternal& qe =  events_by_query_.emplace(
-        event.Query(), EventSetInternal()).first->second;
-    if (qe.emplace(event).second) {
-      ++size_;
-    }
+    event_set_.emplace(event);
   }
 
   virtual void Clear() {
-    events_by_query_.clear();
-    size_ = 0;
+    event_set_.clear();
   }
 
   virtual void Remove(const EventType& event) {
-    auto it = events_by_query_.find(event.Query());
-    if (it != events_by_query_.end()) {
-      size_ -= it->second.erase(event);
-    }
+    event_set_.erase(event);
   }
 
+  virtual size_t Size() const { return event_set_.size(); }
+
   virtual EventList FindOverlapping(const Event<QType, LType>& event) const {
+    auto it = event_set_.find(event);
+    if (it != event_set_.end()) { return {*it}; }
+    else { return {}; }
+  }
+
+protected:
+  std::set<E> event_set_;
+};
+
+
+/*
+// Specialization for Shaped events
+template <typename Q, typename L, typename D>
+class EventSet<ShapedEvent<Q, L, D>> : public BaseEventSet<D> {
+ public:
+  virtual EventList FindOverlapping(const ShapedEvent<QType, LType>& event) const {
     // Find all events with an intersection area > 0.
     std::vector<std::pair<typename LType::Type, E>> aux;
     auto it = events_by_query_.find(event.Query());
@@ -70,13 +81,7 @@ class EventSet {
     for (const auto& a : aux) { result.push_back(a.second); }
     return result;
   }
-
-  virtual const size_t& Size() const { return size_; }
-
-private:
-  std::unordered_map<QType, EventSetInternal> events_by_query_;
-  size_t size_;
-};
+}; */
 
 }  // namespace core
 }  // namespace kws

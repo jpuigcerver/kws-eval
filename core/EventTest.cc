@@ -67,27 +67,6 @@ TEST(EventTest, Comparisons) {
   }
 }
 
-TEST(EventTest, Geometry) {
-  // Event area
-  {
-    Event<int, MockLocation<int>> e1;
-    EXPECT_CALL(e1.Location(), Area()).WillRepeatedly(Return(99));
-    EXPECT_EQ(e1.Area(), e1.Location().Area());
-  }
-  // Intersection area
-  {
-    Event<int, MockLocation<int>> e1, e2;
-    EXPECT_CALL(e1.Location(), IntersectionArea(_)).WillRepeatedly(Return(99));
-    EXPECT_EQ(IntersectionArea(e1, e2), 99);
-  }
-  // Union area
-  {
-    Event<int, MockLocation<int>> e1, e2;
-    EXPECT_CALL(e1.Location(), UnionArea(_)).WillRepeatedly(Return(99));
-    EXPECT_EQ(UnionArea(e1, e2), 99);
-  }
-}
-
 TEST(EventTest, Streams) {
   Event<int, MockLocation<int>> e1, e2;
   e1.Query() = 1;

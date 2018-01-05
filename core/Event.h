@@ -12,8 +12,6 @@ class Event {
  public:
   typedef Q QType;
   typedef L LType;
-  typedef typename LType::Type Type;
-  typedef Event<Q, L> Base;
 
   Event() {}
 
@@ -55,8 +53,6 @@ class Event {
     return !(*this < other);
   }
 
-  virtual Type Area() const { return location_.Area(); }
-
  protected:
   QType query_;
   LType location_;
@@ -72,16 +68,6 @@ template <typename Q, typename L>
 std::ostream& operator<<(std::ostream& os, const Event<Q, L>& event) {
   os << event.Query() << " " << event.Location();
   return os;
-}
-
-template <class E1, class E2>
-typename E1::Type IntersectionArea(const E1& a, const E2& b) {
-  return IntersectionArea(a.Location(), b.Location());
-}
-
-template <class E1, class E2>
-typename E1::Type UnionArea(const E1& a, const E2& b) {
-  return UnionArea(a.Location(), b.Location());
 }
 
 }  // namespace core

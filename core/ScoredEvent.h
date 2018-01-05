@@ -8,17 +8,19 @@
 namespace kws {
 namespace core {
 
-template <typename Q, typename L>
-class ScoredEvent : public Event<Q, L> {
+template <typename E>
+class ScoredEvent : public E {
  public:
-  typedef Event<Q, L> Base;
+  typedef E Base;
+  typedef typename E::QType QType;
+  typedef typename E::LType LType;
 
   ScoredEvent() {}
 
   explicit ScoredEvent(float s) : score_(s) {}
 
-  ScoredEvent(const Q& query, const L& location, float s) :
-      Event<Q, L>(query, location), score_(s) {}
+  ScoredEvent(const QType& query, const LType& location, float s) :
+      E(query, location), score_(s) {}
 
   virtual bool operator==(const ScoredEvent& other) const {
     return score_ == other.score_ && Base::operator==(other);
@@ -53,14 +55,14 @@ class ScoredEvent : public Event<Q, L> {
   float score_;
 };
 
-template <class Q, class L>
-std::istream& operator>>(std::istream& is, ScoredEvent<Q, L>& event) {
+template <class E>
+std::istream& operator>>(std::istream& is, ScoredEvent<E>& event) {
   is >> event.Query() >> event.Location() >> event.Score();
   return is;
 }
 
-template <class Q, class L>
-std::ostream& operator<<(std::ostream& os, const ScoredEvent<Q, L>& event) {
+template <class E>
+std::ostream& operator<<(std::ostream& os, const ScoredEvent<E>& event) {
   os << event.Query() << " " << event.Location() << " " << event.Score();
   return os;
 }
