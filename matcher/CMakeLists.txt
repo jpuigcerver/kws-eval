@@ -8,6 +8,6 @@ IF(GTEST_FOUND AND GMOCK_FOUND AND WITH_TESTS)
     SimpleMatcherTest.cc SimpleMatcher.h Matcher.h
     ../scorer/MockScorer.h ../core/DummyLocation.h)
   TARGET_LINK_LIBRARIES(SimpleMatcherTest
-    ${COMMON_LIBRARIES} ${GTEST_LIBRARIES} ${GMOCK_BOTH_LIBRARIES})
+    ${GTEST_LIBRARIES} ${GMOCK_BOTH_LIBRARIES} ${COMMON_LIBRARIES})
   ADD_TEST(SimpleMatcherTest SimpleMatcherTest)
 ENDIF()

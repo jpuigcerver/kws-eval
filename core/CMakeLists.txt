@@ -17,36 +17,36 @@ IF(GTEST_FOUND AND GMOCK_FOUND AND WITH_TESTS)
   ADD_EXECUTABLE(AssessmentTest AssessmentTest.cc)
   TARGET_LINK_LIBRARIES(AssessmentTest
     core
-    ${COMMON_LIBRARIES} ${GTEST_LIBRARIES} ${GMOCK_BOTH_LIBRARIES})
+    ${GTEST_LIBRARIES} ${GMOCK_BOTH_LIBRARIES} ${COMMON_LIBRARIES})
   ADD_TEST(AssessmentTest AssessmentTest)
 
   ADD_EXECUTABLE(BoundingBoxTest BoundingBoxTest.cc)
   TARGET_LINK_LIBRARIES(BoundingBoxTest
-    core ${COMMON_LIBRARIES} ${GTEST_BOTH_LIBRARIES})
+    core ${GTEST_BOTH_LIBRARIES} ${COMMON_LIBRARIES})
   ADD_TEST(BoundingBoxTest BoundingBoxTest)
 
   ADD_EXECUTABLE(DocumentBoundingBoxTest DocumentBoundingBoxTest.cc)
   TARGET_LINK_LIBRARIES(DocumentBoundingBoxTest
-    core ${COMMON_LIBRARIES} ${GTEST_BOTH_LIBRARIES})
+    core ${GTEST_BOTH_LIBRARIES} ${COMMON_LIBRARIES})
   ADD_TEST(DocumentBoundingBoxTest DocumentBoundingBoxTest)
 
   ADD_EXECUTABLE(EventSetTest EventSetTest.cc)
   TARGET_LINK_LIBRARIES(EventSetTest
-    core ${COMMON_LIBRARIES} ${GTEST_BOTH_LIBRARIES})
+    core ${GTEST_BOTH_LIBRARIES} ${COMMON_LIBRARIES})
   ADD_TEST(EventSetTest EventSetTest)
 
   ADD_EXECUTABLE(EventTest EventTest.cc MockLocation.h)
   TARGET_LINK_LIBRARIES(EventTest
-    core ${COMMON_LIBRARIES} ${GTEST_LIBRARIES} ${GMOCK_BOTH_LIBRARIES})
+    core ${GTEST_LIBRARIES} ${GMOCK_BOTH_LIBRARIES} ${COMMON_LIBRARIES})
   ADD_TEST(EventTest EventTest)
 
   ADD_EXECUTABLE(ShapedEventTest ShapedEventTest.cc MockLocation.h)
   TARGET_LINK_LIBRARIES(ShapedEventTest
-    core ${COMMON_LIBRARIES} ${GTEST_LIBRARIES} ${GMOCK_BOTH_LIBRARIES})
+    core ${GTEST_LIBRARIES} ${GMOCK_BOTH_LIBRARIES} ${COMMON_LIBRARIES})
   ADD_TEST(ShapedEventTest ShapedEventTest)
 
   ADD_EXECUTABLE(DocumentBoundingBoxEventSetTest DocumentBoundingBoxEventSetTest.cc)
   TARGET_LINK_LIBRARIES(DocumentBoundingBoxEventSetTest
-    core ${COMMON_LIBRARIES} ${GTEST_BOTH_LIBRARIES})
+    core ${GTEST_BOTH_LIBRARIES} ${COMMON_LIBRARIES})
   ADD_TEST(DocumentBoundingBoxEventSetTest DocumentBoundingBoxEventSetTest)
 ENDIF()
