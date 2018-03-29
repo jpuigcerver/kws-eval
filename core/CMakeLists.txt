@@ -16,36 +16,37 @@ TARGET_SOURCES(core INTERFACE
 IF(GTEST_FOUND AND GMOCK_FOUND AND WITH_TESTS)
   ADD_EXECUTABLE(AssessmentTest AssessmentTest.cc)
   TARGET_LINK_LIBRARIES(AssessmentTest
-    core ${GMOCK_MAIN_LIBRARIES} ${COMMON_LIBRARIES})
+    core
+    ${COMMON_LIBRARIES} ${GTEST_LIBRARIES} ${GMOCK_BOTH_LIBRARIES})
   ADD_TEST(AssessmentTest AssessmentTest)
 
   ADD_EXECUTABLE(BoundingBoxTest BoundingBoxTest.cc)
   TARGET_LINK_LIBRARIES(BoundingBoxTest
-    core ${GTEST_BOTH_LIBRARIES} ${COMMON_LIBRARIES})
+    core ${COMMON_LIBRARIES} ${GTEST_BOTH_LIBRARIES})
   ADD_TEST(BoundingBoxTest BoundingBoxTest)
 
   ADD_EXECUTABLE(DocumentBoundingBoxTest DocumentBoundingBoxTest.cc)
   TARGET_LINK_LIBRARIES(DocumentBoundingBoxTest
-    core ${GTEST_BOTH_LIBRARIES} ${COMMON_LIBRARIES})
+    core ${COMMON_LIBRARIES} ${GTEST_BOTH_LIBRARIES})
   ADD_TEST(DocumentBoundingBoxTest DocumentBoundingBoxTest)
 
   ADD_EXECUTABLE(EventSetTest EventSetTest.cc)
   TARGET_LINK_LIBRARIES(EventSetTest
-    core ${GTEST_BOTH_LIBRARIES} ${COMMON_LIBRARIES})
+    core ${COMMON_LIBRARIES} ${GTEST_BOTH_LIBRARIES})
   ADD_TEST(EventSetTest EventSetTest)
 
   ADD_EXECUTABLE(EventTest EventTest.cc MockLocation.h)
   TARGET_LINK_LIBRARIES(EventTest
-    core ${GMOCK_MAIN_LIBRARIES} ${COMMON_LIBRARIES})
+    core ${COMMON_LIBRARIES} ${GTEST_LIBRARIES} ${GMOCK_BOTH_LIBRARIES})
   ADD_TEST(EventTest EventTest)
 
   ADD_EXECUTABLE(ShapedEventTest ShapedEventTest.cc MockLocation.h)
   TARGET_LINK_LIBRARIES(ShapedEventTest
-    core ${GMOCK_MAIN_LIBRARIES} ${COMMON_LIBRARIES})
+    core ${COMMON_LIBRARIES} ${GTEST_LIBRARIES} ${GMOCK_BOTH_LIBRARIES})
   ADD_TEST(ShapedEventTest ShapedEventTest)
 
   ADD_EXECUTABLE(DocumentBoundingBoxEventSetTest DocumentBoundingBoxEventSetTest.cc)
   TARGET_LINK_LIBRARIES(DocumentBoundingBoxEventSetTest
-    core ${GTEST_BOTH_LIBRARIES} ${COMMON_LIBRARIES})
+    core ${COMMON_LIBRARIES} ${GTEST_BOTH_LIBRARIES})
   ADD_TEST(DocumentBoundingBoxEventSetTest DocumentBoundingBoxEventSetTest)
 ENDIF()

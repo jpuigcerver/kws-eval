@@ -11,7 +11,7 @@ IF(GTEST_FOUND AND GMOCK_FOUND AND WITH_TESTS)
     IntersectionOverHypothesisAreaScorerTest.cc
     IntersectionOverHypothesisAreaScorer.h Scorer.h ../core/MockEvent.h)
   TARGET_LINK_LIBRARIES(IntersectionOverHypothesisAreaScorerTest
-    core ${GMOCK_MAIN_LIBRARIES} ${COMMON_LIBRARIES})
+    core ${COMMON_LIBRARIES} ${GTEST_LIBRARIES} ${GMOCK_BOTH_LIBRARIES})
   ADD_TEST(IntersectionOverHypothesisAreaScorerTest
     IntersectionOverHypothesisAreaScorerTest)
 
@@ -19,7 +19,7 @@ IF(GTEST_FOUND AND GMOCK_FOUND AND WITH_TESTS)
     SoftBoundingBoxScorerTest.cc SoftBoundingBoxScorer.h Scorer.h
     ../core/MockEvent.h)
   TARGET_LINK_LIBRARIES(SoftBoundingBoxScorerTest
-    core ${GMOCK_MAIN_LIBRARIES} ${COMMON_LIBRARIES})
+    core ${COMMON_LIBRARIES} ${GTEST_LIBRARIES} ${GMOCK_BOTH_LIBRARIES})
   ADD_TEST(SoftBoundingBoxScorerTest
     SoftBoundingBoxScorerTest)
 
@@ -27,7 +27,7 @@ IF(GTEST_FOUND AND GMOCK_FOUND AND WITH_TESTS)
     IntersectionOverUnionAreaScorerTest.cc IntersectionOverUnionAreaScorer.h
     Scorer.h ../core/MockEvent.h)
   TARGET_LINK_LIBRARIES(IntersectionOverUnionAreaScorerTest
-    core ${GMOCK_MAIN_LIBRARIES} ${COMMON_LIBRARIES})
+    core ${COMMON_LIBRARIES} ${GTEST_LIBRARIES} ${GMOCK_BOTH_LIBRARIES})
   ADD_TEST(IntersectionOverUnionAreaScorerTest
     IntersectionOverUnionAreaScorerTest)
 ENDIF()
