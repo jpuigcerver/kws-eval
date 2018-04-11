@@ -22,8 +22,6 @@ class Match {
     if (other.HasHyp()) SetHyp(other.GetHyp());
   }
 
-  explicit Match(const MatchError& error) : error_(error) {}
-
   Match(float fp, float fn) : error_(fp, fn) {}
 
   Match(const RefEvent& ref, const HypEvent& hyp, const MatchError& error) :
@@ -52,6 +50,13 @@ class Match {
   inline const RefEvent& GetRef() const {
     assert(ref_ != nullptr);
     return *ref_;
+  }
+
+  Match& operator=(Match&& other) {
+    error_ = std::move(other.error_);
+    ref_ = std::move(other.ref_);
+    hyp_ = std::move(other.hyp_);
+    return *this;
   }
 
   bool operator==(const Match& other) const {

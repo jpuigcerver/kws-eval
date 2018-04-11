@@ -13,6 +13,7 @@
 
 #include "cmd/Parser.h"
 #include "core/Assessment.h"
+#include "core/Bootstrapping.h"
 
 namespace kws {
 namespace tools {
@@ -20,28 +21,29 @@ namespace tools {
 using kws::cmd::Parser;
 using kws::core::CollapseMatches;
 using kws::core::ComputeAP;
+using kws::core::ComputePercentileBootstrapCI;
 using kws::core::ComputePrecisionAndRecall;
 using kws::core::Match;
 
-template <typename E, typename C>
-void filter_events(const C& queryset, std::vector<E>* events) {
+template<typename E, typename C>
+void filter_events(const C &queryset, std::vector<E> *events) {
   std::vector<E> events_aux = *events;
   events->clear();
-  for (const auto& e : events_aux) {
+  for (const auto &e : events_aux) {
     if (queryset.count(e.Query()) > 0) events->push_back(e);
   }
 }
 
-template <class RefReader, class HypReader, class Matcher>
+template<class RefReader, class HypReader, class Matcher>
 class GenericKwsEvalTool {
  public:
   typedef typename Matcher::RefEvent RefEvent;
   typedef typename Matcher::HypEvent HypEvent;
 
-  GenericKwsEvalTool(RefReader* ref_reader, HypReader* hyp_reader,
-                     Matcher* matcher, const std::string& description = "") :
+  GenericKwsEvalTool(RefReader *ref_reader, HypReader *hyp_reader,
+                     Matcher *matcher, const std::string &description = "") :
       ref_reader_(ref_reader), hyp_reader_(hyp_reader), matcher_(matcher),
-      description_(description) { }
+      description_(description) {}
 
   int Main(int argc, const char **argv) {
 #ifdef WITH_GLOG
@@ -53,11 +55,22 @@ class GenericKwsEvalTool {
     std::string queryset_filename = "";
     std::string querygroups_filename = "";
     std::string matches_filename = "";
+    bool collapse_matches = true;
     bool interpolated_precision = true;
     bool trapezoid_integral = true;
+    bool bootstrap_ci_gap = false;
+    bool bootstrap_ci_map = false;
+    size_t bootstrap_samples = 10000;
+    size_t bootstrap_seed = 0x12345;
+    double bootstrap_alpha = 0.05;
 
     // Options
     Parser cmd_parser(argv[0], description_);
+    cmd_parser.RegisterOption(
+        "collapse_matches",
+        "Collapse all matches with the same score before computing precision "
+            "and recall curves.",
+        &collapse_matches);
     cmd_parser.RegisterOption(
         "interpolated_precision",
         "Use interpolated precision.",
@@ -68,7 +81,7 @@ class GenericKwsEvalTool {
     cmd_parser.RegisterOption(
         "query_set",
         "File containing the set of queries to consider. Events regarding "
-        "other queries are excluded from both references and hypotheses.",
+            "other queries are excluded from both references and hypotheses.",
         &queryset_filename);
     cmd_parser.RegisterOption(
         "dump_matches",
@@ -77,8 +90,29 @@ class GenericKwsEvalTool {
     cmd_parser.RegisterOption(
         "query_groups",
         "File containing the set of query groups to consider in the mAP. "
-        "This option supersedes the queries read from the file --query_set.",
+            "This option supersedes the queries read from the file --query_set.",
         &querygroups_filename);
+    cmd_parser.RegisterOption(
+        "bootstrap_ci_gap",
+        "Compute bootstrapped confidence intervals for the Global AP.",
+        &bootstrap_ci_gap);
+    cmd_parser.RegisterOption(
+        "bootstrap_ci_map",
+        "Compute bootstrapped confidence intervals for the Mean AP.",
+        &bootstrap_ci_map);
+    cmd_parser.RegisterOption(
+        "bootstrap_samples",
+        "Use this number of bootstrapped samples to compute the confidence "
+            "intervals.",
+        &bootstrap_samples);
+    cmd_parser.RegisterOption(
+        "bootstrap_seed",
+        "Use this random seed to generate the bootstrapped samples.",
+        &bootstrap_seed);
+    cmd_parser.RegisterOption(
+        "bootstrap_alpha",
+        "Use this alpha value to compute confidence intervals.",
+        &bootstrap_alpha);
     // Arguments
     cmd_parser.RegisterArgument(
         "references",
@@ -237,51 +271,63 @@ class GenericKwsEvalTool {
       }
     }
 
+    // Group matches by query/group.
+    typedef std::vector<std::vector<Match<RefEvent, HypEvent>>>
+        VectorOfVectorsOfMatches;
+    VectorOfVectorsOfMatches matches_by_group;
+    core::GroupMatchesByQueryGroup(matches, query2group, &matches_by_group);
+
     // Compute GLOBAL Average Precision
-    {
-      // Collapse all events with the same score into a single point in the
-      // precision/recall curve.
-      const auto collapsed_errors = CollapseMatches(matches);
-      // Compute precision and recall curves
-      std::vector<float> pr_curve, rc_curve;
-      ComputePrecisionAndRecall(collapsed_errors,
-                                interpolated_precision,
-                                &pr_curve, &rc_curve);
-      // Compute & print Average Precision
+    if (bootstrap_ci_gap) {
+      auto gap_statistic =
+          [collapse_matches, interpolated_precision, trapezoid_integral](
+              const VectorOfVectorsOfMatches &sampled) -> double {
+            return core::ComputeGlobalAP(sampled,
+                                         collapse_matches,
+                                         interpolated_precision,
+                                         trapezoid_integral);
+          };
+      core::MatchesByQuerySampler<RefEvent, HypEvent> sampler(bootstrap_seed);
+      double lower_bound = 0.0, upper_bound = 0.0;
+      const double global_ap = core::ComputePercentileBootstrapCI(
+          matches_by_group, bootstrap_samples, bootstrap_alpha, gap_statistic,
+          &sampler, &lower_bound, &upper_bound);
+      std::cout << "gAP = " << global_ap
+                << " [" << lower_bound << ", " << upper_bound << "]"
+                << std::endl;
+    } else {
       std::cout << "gAP = "
-                << ComputeAP(pr_curve, rc_curve, trapezoid_integral)
+                << core::ComputeGlobalAP(matches,
+                                         collapse_matches,
+                                         interpolated_precision,
+                                         trapezoid_integral)
                 << std::endl;
     }
+
     // Compute MEAN Average Precision
-    {
-      // First, split the matches according to their query/group ID
-      std::unordered_map<std::string, std::list<Match<RefEvent, HypEvent>>>
-          query_to_matches;
-      for (const auto &m : matches) {
-        const std::string &query = m.HasRef()
-                                   ? m.GetRef().Query()
-                                   : m.GetHyp().Query();
-        query_to_matches.emplace(
-                (query2group.count(query) ? query2group[query] : query),
-                std::list<Match<RefEvent, HypEvent>>())
-            .first->second.push_back(m);
-      }
-      // Sum the AP of each individual query
-      float sumAP = 0.0f;
-      for (const auto &qm : query_to_matches) {
-        const auto collapsed_errors = CollapseMatches(qm.second);
-        std::vector<float> pr_curve, rc_curve;
-        ComputePrecisionAndRecall(collapsed_errors,
-                                  interpolated_precision,
-                                  &pr_curve, &rc_curve);
-        const float aux = ComputeAP(pr_curve, rc_curve, trapezoid_integral);
-        sumAP += aux;
-      }
-      // Print MEAN Average Precision
+    if (bootstrap_ci_map) {
+      auto map_statistic =
+          [collapse_matches, interpolated_precision, trapezoid_integral](
+              const VectorOfVectorsOfMatches &sampled) -> double {
+            return core::ComputeMeanAP(sampled,
+                                       collapse_matches,
+                                       interpolated_precision,
+                                       trapezoid_integral);
+          };
+      core::MatchesByQuerySampler<RefEvent, HypEvent> sampler(bootstrap_seed);
+      double lower_bound = 0.0, upper_bound = 0.0;
+      const double mean_ap = core::ComputePercentileBootstrapCI(
+          matches_by_group, bootstrap_samples, bootstrap_alpha, map_statistic,
+          &sampler, &lower_bound, &upper_bound);
+      std::cout << "mAP = " << mean_ap
+                << " [" << lower_bound << ", " << upper_bound << "]"
+                << std::endl;
+    } else {
       std::cout << "mAP = "
-                << (query_to_matches.size() > 0
-                    ? sumAP / query_to_matches.size()
-                    : 0.0f)
+                << core::ComputeMeanAP(matches_by_group,
+                                       collapse_matches,
+                                       interpolated_precision,
+                                       trapezoid_integral)
                 << std::endl;
     }
 
@@ -289,9 +335,9 @@ class GenericKwsEvalTool {
   }
 
  protected:
-  RefReader* ref_reader_;
-  HypReader* hyp_reader_;
-  Matcher* matcher_;
+  RefReader *ref_reader_;
+  HypReader *hyp_reader_;
+  Matcher *matcher_;
   std::string description_;
 };
 
