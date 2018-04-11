@@ -58,8 +58,8 @@ class GenericKwsEvalTool {
     bool collapse_matches = true;
     bool interpolated_precision = true;
     bool trapezoid_integral = true;
-    bool bootstrap_ci_gap = true;
-    bool bootstrap_ci_map = true;
+    bool bootstrap_ci_gap = false;
+    bool bootstrap_ci_map = false;
     size_t bootstrap_samples = 10000;
     size_t bootstrap_seed = 0x12345;
     double bootstrap_alpha = 0.05;
