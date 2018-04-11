@@ -50,8 +50,3 @@ script:
   - cmake -DGTEST_ROOT=$GTEST_ROOT -DGMOCK_ROOT=$GTEST_ROOT -DGLOG_ROOT=$GLOG_ROOT ..
   - make
   - make test
-
-branches:
-  only:
-  - master
-  - /.*/
