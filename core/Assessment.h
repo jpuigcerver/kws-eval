@@ -5,11 +5,15 @@
 #include <cassert>
 #include <limits>
 #include <numeric>
+#include <random>
+#include <unordered_map>
 #include <utility>
 #include <vector>
 
+#include "core/Match.h"
 #include "core/MatchError.h"
 #include "core/MatchErrorCounts.h"
+
 
 namespace kws {
 namespace core {
@@ -25,7 +29,7 @@ namespace core {
 // fp=1 fn=0 nh=2 nr=1 score=0.9
 // fp=0 fn=2 nh=0 nr=2 score=-inf
 template <typename Container>
-std::vector<MatchErrorCounts> CollapseMatches(Container matches) {
+std::vector<MatchErrorCounts> CollapseMatches(const Container& matches) {
   std::vector<std::pair<MatchErrorCounts, float>> collapsed_matches;
   for(const auto& m : matches) {
     const float score = m.HasHyp()
@@ -49,6 +53,15 @@ std::vector<MatchErrorCounts> CollapseMatches(Container matches) {
   return output;
 }
 
+template <typename Container>
+std::vector<MatchError> GetMatchErrors(const Container& matches) {
+  std::vector<MatchError> output;
+  for (const auto& m : matches) {
+    output.push_back(m.GetError());
+  }
+  return output;
+}
+
 // Compute Precision and Recall points
 template <class Container>
 void ComputePrecisionAndRecall(
@@ -61,7 +74,7 @@ void ComputePrecisionAndRecall(
   rc->clear();
 
   // Count total number of references
-  const size_t TR =
+  const auto TR =
       std::accumulate(errors.begin(), errors.end(), 0,
                       [](size_t a, const ME& e) -> size_t {
                         return a + e.NR();
@@ -100,7 +113,7 @@ float ComputeAP(const Container& errors, const std::vector<float>& pr,
                 "Errors must be descendant of MatchError class.");
   assert(pr.size() == errors.size());
   // Count total number of references
-  const size_t TR =
+  const auto TR =
       std::accumulate(errors.begin(), errors.end(), 0,
                       [](size_t a, const ME& e) -> size_t {
                         return a + e.NR();
@@ -112,7 +125,7 @@ float ComputeAP(const Container& errors, const std::vector<float>& pr,
     sumAP += tp * (trapezoid && i > 0 ? 0.5 * (pr[i] + pr[i - 1]) : pr[i]);
   }
 
-  return TR > 0 ? sumAP / TR : 0.0;
+  return TR > 0 ? sumAP / TR : 0.0f;
 }
 
 // Compute Average Precision from the precision and recall curves, using
@@ -132,6 +145,118 @@ float ComputeAP(const std::vector<float>& pr, const std::vector<float>& rc,
   return AP1 - AP2;
 }
 
+template <typename RefEvent, typename HypEvent>
+double ComputeGlobalAP(
+    const std::vector<Match<RefEvent, HypEvent>>& matches,
+    bool collapse_matches, bool interpolate_precision,
+    bool trapezoid_integral) {
+  std::vector<float> pr, rc;
+  if (collapse_matches) {
+    // Collapse all events with the same score into a single point in the
+    // precision/recall curve.
+    const auto collapsed_errors = CollapseMatches(matches);
+    // Compute precision and recall curves
+    ComputePrecisionAndRecall(collapsed_errors,
+                              interpolate_precision,
+                              &pr, &rc);
+  } else {
+    const auto errors = GetMatchErrors(matches);
+    ComputePrecisionAndRecall(errors,
+                              interpolate_precision,
+                              &pr, &rc);
+  }
+  return ComputeAP(pr, rc, trapezoid_integral);
 }
+
+template <typename RefEvent, typename HypEvent>
+double ComputeGlobalAP(
+    const std::vector<std::vector<Match<RefEvent, HypEvent>>>& matches_by_query,
+    bool collapse_matches, bool interpolate_precision,
+    bool trapezoid_integral) {
+  // Put matches per query into a single vector.
+  std::vector<Match<RefEvent, HypEvent>> all_matches;
+  for (const auto &matches_vector : matches_by_query) {
+    for (const auto &match : matches_vector) {
+      all_matches.push_back(match);
+    }
+  }
+  // Sort all matches w.r.t. decreasing score
+  std::sort(all_matches.begin(), all_matches.end(),
+            [](const Match<RefEvent, HypEvent> &a,
+               const Match<RefEvent, HypEvent> &b) -> bool {
+              if (a.HasHyp() && b.HasHyp()) {
+                return a.GetHyp().Score() > b.GetHyp().Score();
+              } else {
+                return a.HasHyp();
+              }
+            });
+  // Compute precision and recall curves from the matches
+  std::vector<float> pr, rc;
+  if (collapse_matches) {
+    const auto collapsed_errors = CollapseMatches(all_matches);
+    ComputePrecisionAndRecall(collapsed_errors, interpolate_precision,
+                              &pr, &rc);
+  } else {
+    const auto errors = GetMatchErrors(all_matches);
+    ComputePrecisionAndRecall(errors, interpolate_precision, &pr, &rc);
+  }
+  return ComputeAP(pr, rc, trapezoid_integral);
 }
+
+template <typename RefEvent, typename HypEvent>
+double ComputeMeanAP(
+    const std::vector<std::vector<Match<RefEvent, HypEvent>>>& matches_by_query,
+    bool collapse_matches, bool interpolate_precision,
+    bool trapezoid_integral) {
+  double sumAP = 0.0;
+  for (auto matches_vector : matches_by_query) {
+    std::sort(matches_vector.begin(), matches_vector.end(),
+              [](const Match<RefEvent, HypEvent> &a,
+                 const Match<RefEvent, HypEvent> &b) -> bool {
+                if (a.HasHyp() && b.HasHyp()) {
+                  return a.GetHyp().Score() > b.GetHyp().Score();
+                } else {
+                  return a.HasHyp();
+                }
+              });
+    // Compute precision and recall curves from the matches
+    std::vector<float> pr, rc;
+    if (collapse_matches) {
+      const auto collapsed_errors = CollapseMatches(matches_vector);
+      ComputePrecisionAndRecall(collapsed_errors, interpolate_precision,
+                                &pr, &rc);
+    } else {
+      const auto errors = GetMatchErrors(matches_vector);
+      ComputePrecisionAndRecall(errors, interpolate_precision, &pr, &rc);
+    }
+    sumAP += ComputeAP(pr, rc, trapezoid_integral);
+  }
+  // Average AP across all queries.
+  return matches_by_query.size() > 0 ? sumAP / matches_by_query.size() : 0.0;
+}
+
+template <typename RefEvent, typename HypEvent, typename Map>
+void GroupMatchesByQueryGroup(
+    const std::vector<Match<RefEvent, HypEvent>>& matches,
+    const Map& query_to_group,
+    std::vector<std::vector<Match<RefEvent, HypEvent>>>* matches_by_group) {
+  typedef typename RefEvent::QType QType;
+  matches_by_group->clear();
+  std::unordered_map<QType, size_t> group2pos;
+  for (const auto &m : matches) {
+    const auto &query = m.HasRef() ? m.GetRef().Query() : m.GetHyp().Query();
+    auto it = query_to_group.find(query);
+    const auto &group = it != query_to_group.end() ? it->second : query;
+    const size_t pos = group2pos.emplace(group, group2pos.size()).first->second;
+    if (pos < matches_by_group->size()) {
+      (*matches_by_group)[pos].push_back(m);
+    } else {
+      matches_by_group->emplace_back();
+      matches_by_group->back().push_back(m);
+    }
+  }
+}
+
+}  // namespace core
+}  // namespace kws
 #endif //CORE_ASSESSMENT_H

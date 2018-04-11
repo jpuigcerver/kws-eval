@@ -1,6 +1,7 @@
 ADD_LIBRARY(core INTERFACE)
 TARGET_SOURCES(core INTERFACE
   ${CMAKE_CURRENT_SOURCE_DIR}/Assessment.h
+  ${CMAKE_CURRENT_SOURCE_DIR}/Bootstrapping.h
   ${CMAKE_CURRENT_SOURCE_DIR}/BoundingBox.h
   ${CMAKE_CURRENT_SOURCE_DIR}/DocumentBoundingBox.h
   ${CMAKE_CURRENT_SOURCE_DIR}/DocumentBoundingBoxEventSet.h
