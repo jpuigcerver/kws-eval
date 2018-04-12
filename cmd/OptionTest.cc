@@ -41,15 +41,15 @@ TEST(OptionTest, Parse) {
   bool opt_bool_val = true;
   Option<bool> opt_bool("--bool", "bool help", &opt_bool_val);
   EXPECT_TRUE(opt_bool.Parse(""));   // Boolean options can omit value
-  EXPECT_EQ(true, opt_bool_val);
+  EXPECT_TRUE(opt_bool_val);
   EXPECT_TRUE(opt_bool.Parse("false"));
-  EXPECT_EQ(false, opt_bool_val);
+  EXPECT_FALSE(opt_bool_val);
   EXPECT_TRUE(opt_bool.Parse("true"));
-  EXPECT_EQ(true, opt_bool_val);
+  EXPECT_TRUE(opt_bool_val);
   EXPECT_TRUE(opt_bool.Parse("0"));
-  EXPECT_EQ(false, opt_bool_val);
+  EXPECT_FALSE(opt_bool_val);
   EXPECT_TRUE(opt_bool.Parse("1"));
-  EXPECT_EQ(true, opt_bool_val);
+  EXPECT_TRUE(opt_bool_val);
   EXPECT_FALSE(opt_bool.Parse("FALSE"));
   EXPECT_FALSE(opt_bool.Parse("TRUE"));
   EXPECT_FALSE(opt_bool.Parse("1234"));
