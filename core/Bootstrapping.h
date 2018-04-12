@@ -50,7 +50,7 @@ class MatchesByQuerySampler {
       std::uniform_int_distribution <size_t> mdist(0, num_matches_q - 1);
       for (size_t j = 0; j < num_matches_q; ++j) {
         const auto &m = original[q][mdist(rng_)];
-        (*sampled)[q].push_back(m);
+        (*sampled)[i].push_back(m);
       }
     }
   }
