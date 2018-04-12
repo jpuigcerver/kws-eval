@@ -248,8 +248,7 @@ void GroupMatchesByQueryGroup(
     const auto &query = m.HasRef() ? m.GetRef().Query() : m.GetHyp().Query();
     auto it = query_to_group.find(query);
     const auto &group = it != query_to_group.end() ? it->second : query;
-    const size_t pos = group2pos.emplace<QType, SType>(
-        group, group2pos.size()).first->second;
+    const size_t pos = group2pos.emplace(group, group2pos.size()).first->second;
     if (pos < matches_by_group->size()) {
       (*matches_by_group)[pos].push_back(m);
     } else {
