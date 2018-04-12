@@ -241,13 +241,15 @@ void GroupMatchesByQueryGroup(
     const Map& query_to_group,
     std::vector<std::vector<Match<RefEvent, HypEvent>>>* matches_by_group) {
   typedef typename RefEvent::QType QType;
+  typedef typename Map::size_type SType;
   matches_by_group->clear();
-  std::unordered_map<QType, size_t> group2pos;
+  std::unordered_map<QType, SType> group2pos;
   for (const auto &m : matches) {
     const auto &query = m.HasRef() ? m.GetRef().Query() : m.GetHyp().Query();
     auto it = query_to_group.find(query);
     const auto &group = it != query_to_group.end() ? it->second : query;
-    const size_t pos = group2pos.emplace(group, group2pos.size()).first->second;
+    const size_t pos = group2pos.emplace<QType, SType>(
+        group, group2pos.size()).first->second;
     if (pos < matches_by_group->size()) {
       (*matches_by_group)[pos].push_back(m);
     } else {

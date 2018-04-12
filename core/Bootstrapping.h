@@ -15,7 +15,8 @@ class MatchesSampler {
  public:
   typedef std::vector<Match<RefEvent, HypEvent>> Container;
 
-  MatchesSampler(const size_t random_seed) : rng_(random_seed) {}
+  explicit MatchesSampler(const size_t random_seed)
+      : rng_(random_seed) {}
 
   void operator()(const Container &original, Container *sampled) {
     const size_t num_matches = original.size();
@@ -35,7 +36,8 @@ class MatchesByQuerySampler {
  public:
   typedef std::vector<std::vector<Match<RefEvent, HypEvent>>> Container;
 
-  MatchesByQuerySampler(const size_t random_seed) : rng_(random_seed) {}
+  explicit MatchesByQuerySampler(const size_t random_seed)
+      : rng_(random_seed) {}
 
   void operator()(const Container &original, Container *sampled) {
     const size_t num_queries = original.size();
@@ -75,8 +77,8 @@ double ComputePercentileBootstrapCI(
     statistics_diffs.push_back(sample_statistic - observed_statistic);
   }
   std::sort(statistics_diffs.begin(), statistics_diffs.end());
-  const size_t li = (size_t)((1.0 - alpha * 0.5) * repetitions);
-  const size_t ui = (size_t)((      alpha * 0.5) * repetitions);
+  const auto li = (size_t)((1.0 - alpha * 0.5) * repetitions);
+  const auto ui = (size_t)((      alpha * 0.5) * repetitions);
   *lower_bound = observed_statistic - statistics_diffs[li];
   *upper_bound = observed_statistic - statistics_diffs[ui];
   return observed_statistic;
