@@ -63,10 +63,10 @@ std::vector<MatchError> GetMatchErrors(const Container& matches) {
 }
 
 // Compute Precision and Recall points
-template <class Container>
+template <typename Real, class Container>
 void ComputePrecisionAndRecall(
     const Container& errors, bool interpolate,
-    std::vector<float>* pr, std::vector<float>* rc) {
+    std::vector<Real>* pr, std::vector<Real>* rc) {
   typedef typename Container::value_type ME;
   static_assert(std::is_base_of<MatchError, ME>::value,
                 "Errors must be descendant of MatchError class.");
@@ -81,7 +81,7 @@ void ComputePrecisionAndRecall(
                       });
 
   size_t sumNR = 0, sumNH = 0;
-  float sumFP = 0.0f, sumFN = 0.0f;
+  Real sumFP = 0, sumFN = 0;
   for (const auto& e : errors) {
     sumNR += e.NR();  // total number of matched references so far
     sumNH += e.NH();  // total number of matched hypotheses so far
@@ -90,11 +90,11 @@ void ComputePrecisionAndRecall(
     // Precision at this point:
     // Ill-posed case: sumNH = 0, p = 1.0.
     // General case:   sumNH > 0, p = 1.0 - (sumFP / sumNH)
-    const float p = sumNH > 0 ? 1.0f - sumFP / sumNH : 1.0f;
+    const Real p = sumNH > 0 ? 1.0 - sumFP / sumNH : 1.0;
     // Recall at this point:
     // Ill-posed case: TR = 0, r = 1.0
     // General case:   TR > 0, r = (sumNR - sumFN) / TR
-    const float r = TR > 0 ? (sumNR - sumFN) / TR : 1.0f;
+    const Real r = TR > 0 ? (sumNR - sumFN) / TR : 1.0;
     pr->push_back(p);
     rc->push_back(r);
   }
@@ -105,23 +105,23 @@ void ComputePrecisionAndRecall(
   }
 }
 
-template <typename Container>
-float ComputeAP(const Container& errors, const std::vector<float>& pr,
-                 bool trapezoid) {
+template <typename Real, typename Container>
+Real ComputeAP(const Container& errors, const std::vector<Real>& pr,
+               bool trapezoid) {
   typedef typename Container::value_type ME;
   static_assert(std::is_base_of<MatchError, ME>::value,
                 "Errors must be descendant of MatchError class.");
   assert(pr.size() == errors.size());
-  // Count total number of references
+  // Count total number of references (relevant objects)
   const auto TR =
       std::accumulate(errors.begin(), errors.end(), 0,
                       [](size_t a, const ME& e) -> size_t {
                         return a + e.NR();
                       });
   // AP = 1/TR * (\sum_{i} pr(i) * tp(i))
-  float sumAP = 0.0;
+  Real sumAP = 0.0;
   for (size_t i = 0; i < pr.size(); ++i) {
-    const float tp = (errors[i].NH() - errors[i].FP());
+    const Real tp = (errors[i].NH() - errors[i].FP());
     sumAP += tp * (trapezoid && i > 0 ? 0.5 * (pr[i] + pr[i - 1]) : pr[i]);
   }
 
@@ -131,14 +131,15 @@ float ComputeAP(const Container& errors, const std::vector<float>& pr,
 // Compute Average Precision from the precision and recall curves, using
 // equation: AP = \sum_{i} Pr[i] * (Rc[i] - Rc[i - 1])
 //              = \sum_{i} Pr[i] * Rc[i]  - \sum_{i} Pr[i] * Rc[i-1]
-float ComputeAP(const std::vector<float>& pr, const std::vector<float>& rc,
-                 bool trapezoid) {
+template <typename Real>
+Real ComputeAP(const std::vector<Real>& pr, const std::vector<Real>& rc,
+               bool trapezoid) {
   assert(pr.size() == rc.size());
-  float AP1 = 0.0;
+  Real AP1 = 0.0;
   for (size_t i = 0; i < pr.size(); ++i) {
     AP1 += rc[i] * (trapezoid && i > 0 ? 0.5 * (pr[i] + pr[i - 1]) : pr[i]);
   }
-  float AP2 = 0.0f;
+  Real AP2 = 0.0f;
   for (size_t i = 1; i < pr.size(); ++i) {
     AP2 += rc[i - 1] * (trapezoid ? 0.5 * (pr[i] + pr[i-1]) : pr[i]);
   }
@@ -150,7 +151,7 @@ double ComputeGlobalAP(
     const std::vector<Match<RefEvent, HypEvent>>& matches,
     bool collapse_matches, bool interpolate_precision,
     bool trapezoid_integral) {
-  std::vector<float> pr, rc;
+  std::vector<double> pr, rc;
   if (collapse_matches) {
     // Collapse all events with the same score into a single point in the
     // precision/recall curve.
@@ -191,7 +192,7 @@ double ComputeGlobalAP(
               }
             });
   // Compute precision and recall curves from the matches
-  std::vector<float> pr, rc;
+  std::vector<double> pr, rc;
   if (collapse_matches) {
     const auto collapsed_errors = CollapseMatches(all_matches);
     ComputePrecisionAndRecall(collapsed_errors, interpolate_precision,
@@ -220,7 +221,7 @@ double ComputeMeanAP(
                 }
               });
     // Compute precision and recall curves from the matches
-    std::vector<float> pr, rc;
+    std::vector<double> pr, rc;
     if (collapse_matches) {
       const auto collapsed_errors = CollapseMatches(matches_vector);
       ComputePrecisionAndRecall(collapsed_errors, interpolate_precision,
