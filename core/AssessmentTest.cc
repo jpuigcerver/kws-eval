@@ -185,11 +185,11 @@ TEST(AssessmentTest, ComputeNDCG) {
         MatchErrorCounts(0.0f, 0.0f, 4, 4)}));
   // NDCG, all missing
   EXPECT_FLOAT_EQ(0.0, ComputeNDCG<double>(std::vector<MatchErrorCounts>{
-      MatchErrorCounts(0.0f, 1.0f, 0, 5)
+      MatchErrorCounts(0.0f, 5.0f, 0, 5)
   }));
   // NDCG, all false positive
   EXPECT_FLOAT_EQ(0.0, ComputeNDCG<double>(std::vector<MatchErrorCounts>{
-      MatchErrorCounts(1.0f, 1.0f, 9, 4)
+      MatchErrorCounts(9.0f, 4.0f, 9, 4)
   }));
   // Generic NDCG collapsed events
   EXPECT_FLOAT_EQ(
@@ -199,7 +199,7 @@ TEST(AssessmentTest, ComputeNDCG) {
           (1 / log2(2) + 1 / log2(3) + 1 / log2(4)),
       ComputeNDCG<double>(std::vector<MatchErrorCounts>{
           MatchErrorCounts(0.0f, 0.0f, 1, 1),
-          MatchErrorCounts(0.2f, 0.0f, 5, 5),
-          MatchErrorCounts(0.75f, 0.5f, 4, 2),
+          MatchErrorCounts(1.0f, 0.0f, 5, 5),
+          MatchErrorCounts(3.0f, 1.0f, 4, 2),
   }));
 }

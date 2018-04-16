@@ -181,13 +181,12 @@ Real ComputeAP(const std::vector<Real> &pr, const std::vector<Real> &rc,
 
 template<typename Real, typename Container>
 Real ComputeNDCG(const Container &errors) {
-  typedef typename Container::value_type ME;
   // Compute unnormalized DCG
   Real dcg = 0.0;
   size_t i = 1, TR = 0;
   for (auto it = errors.begin(); it != errors.end(); ++it, ++i) {
     if (it->NH() > 0) {
-      dcg += (pow(2.0, 1.0 - it->FP()) - 1) / log2(i + 1);
+      dcg += (pow(2.0, 1.0 - (it->FP() / it->NH())) - 1) / log2(i + 1);
     }
     if (it->NR() > 0) {
       ++TR;
