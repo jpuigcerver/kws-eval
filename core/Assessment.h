@@ -187,8 +187,7 @@ Real ComputeNDCG(const Container &errors) {
   size_t i = 1;
   for (auto it = errors.begin(); it != errors.end(); ++it, ++i) {
     if (it->NH() > 0) {
-      const Real r = (it->NH() - it->FP()) / static_cast<Real>(it->NH());
-      dcg += (pow(2.0, r) - 1) / log2(i + 1);
+      dcg += (pow(2.0, 1.0 - it->FP()) - 1) / log2(i + 1);
     }
   }
   // Count total number of references (relevant objects)
