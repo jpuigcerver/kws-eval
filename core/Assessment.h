@@ -10,13 +10,33 @@
 #include <utility>
 #include <vector>
 
-#include "core/Match.h"
 #include "core/MatchError.h"
 #include "core/MatchErrorCounts.h"
 
-
 namespace kws {
 namespace core {
+
+template<typename M, typename Map>
+void GroupMatchesByQueryGroup(
+    const std::vector<M> &matches, const Map &query_to_group,
+    std::vector<std::vector<M>> *matches_by_group) {
+  typedef typename M::RefEvent::QType QType;
+  typedef typename Map::size_type SType;
+  matches_by_group->clear();
+  std::unordered_map<QType, SType> group2pos;
+  for (const auto &m : matches) {
+    const auto &query = m.HasRef() ? m.GetRef().Query() : m.GetHyp().Query();
+    auto it = query_to_group.find(query);
+    const auto &group = it != query_to_group.end() ? it->second : query;
+    const size_t pos = group2pos.emplace(group, group2pos.size()).first->second;
+    if (pos < matches_by_group->size()) {
+      (*matches_by_group)[pos].push_back(m);
+    } else {
+      matches_by_group->emplace_back();
+      matches_by_group->back().push_back(m);
+    }
+  }
+}
 
 // Collapse all matches with the same hypothesis score into a single point
 // into the Recall-Precision curve.
@@ -28,13 +48,13 @@ namespace core {
 // -----
 // fp=1 fn=0 nh=2 nr=1 score=0.9
 // fp=0 fn=2 nh=0 nr=2 score=-inf
-template <typename Container>
-std::vector<MatchErrorCounts> CollapseMatches(const Container& matches) {
+template<typename Container>
+std::vector<MatchErrorCounts> CollapseMatches(const Container &matches) {
   std::vector<std::pair<MatchErrorCounts, float>> collapsed_matches;
-  for(const auto& m : matches) {
+  for (const auto &m : matches) {
     const float score = m.HasHyp()
-        ? m.GetHyp().Score()                         // score of the hypothesis
-        : -std::numeric_limits<float>::infinity();  // false negative
+                        ? m.GetHyp().Score()                         // score of the hypothesis
+                        : -std::numeric_limits<float>::infinity();  // false negative
 
     if (collapsed_matches.size() == 0 ||
         score != collapsed_matches.back().second) {
@@ -47,26 +67,39 @@ std::vector<MatchErrorCounts> CollapseMatches(const Container& matches) {
     }
   }
   std::vector<MatchErrorCounts> output;
-  for (const auto& cm : collapsed_matches) {
+  for (const auto &cm : collapsed_matches) {
     output.push_back(cm.first);
   }
   return output;
 }
 
-template <typename Container>
-std::vector<MatchError> GetMatchErrors(const Container& matches) {
+template<typename Container>
+std::vector<MatchError> GetMatchErrors(const Container &matches) {
   std::vector<MatchError> output;
-  for (const auto& m : matches) {
+  for (const auto &m : matches) {
     output.push_back(m.GetError());
   }
   return output;
 }
 
+template<typename Container>
+void SortMatchesDecreasingScore(Container *matches) {
+  typedef typename Container::value_type Match;
+  std::sort(matches->begin(), matches->end(),
+            [](const Match &a, const Match &b) -> bool {
+              if (a.HasHyp() && b.HasHyp()) {
+                return a.GetHyp().Score() > b.GetHyp().Score();
+              } else {
+                return a.HasHyp();
+              }
+            });
+}
+
 // Compute Precision and Recall points
-template <typename Real, class Container>
+template<typename Real, class Container>
 void ComputePrecisionAndRecall(
-    const Container& errors, bool interpolate,
-    std::vector<Real>* pr, std::vector<Real>* rc) {
+    const Container &errors, bool interpolate,
+    std::vector<Real> *pr, std::vector<Real> *rc) {
   typedef typename Container::value_type ME;
   static_assert(std::is_base_of<MatchError, ME>::value,
                 "Errors must be descendant of MatchError class.");
@@ -76,13 +109,13 @@ void ComputePrecisionAndRecall(
   // Count total number of references
   const auto TR =
       std::accumulate(errors.begin(), errors.end(), 0,
-                      [](size_t a, const ME& e) -> size_t {
+                      [](size_t a, const ME &e) -> size_t {
                         return a + e.NR();
                       });
 
   size_t sumNR = 0, sumNH = 0;
   Real sumFP = 0, sumFN = 0;
-  for (const auto& e : errors) {
+  for (const auto &e : errors) {
     sumNR += e.NR();  // total number of matched references so far
     sumNH += e.NH();  // total number of matched hypotheses so far
     sumFP += e.FP();  // total number (fractional) of false positives
@@ -105,8 +138,8 @@ void ComputePrecisionAndRecall(
   }
 }
 
-template <typename Real, typename Container>
-Real ComputeAP(const Container& errors, const std::vector<Real>& pr,
+template<typename Real, typename Container>
+Real ComputeAP(const Container &errors, const std::vector<Real> &pr,
                bool trapezoid) {
   typedef typename Container::value_type ME;
   static_assert(std::is_base_of<MatchError, ME>::value,
@@ -115,7 +148,7 @@ Real ComputeAP(const Container& errors, const std::vector<Real>& pr,
   // Count total number of references (relevant objects)
   const auto TR =
       std::accumulate(errors.begin(), errors.end(), 0,
-                      [](size_t a, const ME& e) -> size_t {
+                      [](size_t a, const ME &e) -> size_t {
                         return a + e.NR();
                       });
   // AP = 1/TR * (\sum_{i} pr(i) * tp(i))
@@ -131,8 +164,8 @@ Real ComputeAP(const Container& errors, const std::vector<Real>& pr,
 // Compute Average Precision from the precision and recall curves, using
 // equation: AP = \sum_{i} Pr[i] * (Rc[i] - Rc[i - 1])
 //              = \sum_{i} Pr[i] * Rc[i]  - \sum_{i} Pr[i] * Rc[i-1]
-template <typename Real>
-Real ComputeAP(const std::vector<Real>& pr, const std::vector<Real>& rc,
+template<typename Real>
+Real ComputeAP(const std::vector<Real> &pr, const std::vector<Real> &rc,
                bool trapezoid) {
   assert(pr.size() == rc.size());
   Real AP1 = 0.0;
@@ -141,16 +174,38 @@ Real ComputeAP(const std::vector<Real>& pr, const std::vector<Real>& rc,
   }
   Real AP2 = 0.0f;
   for (size_t i = 1; i < pr.size(); ++i) {
-    AP2 += rc[i - 1] * (trapezoid ? 0.5 * (pr[i] + pr[i-1]) : pr[i]);
+    AP2 += rc[i - 1] * (trapezoid ? 0.5 * (pr[i] + pr[i - 1]) : pr[i]);
   }
   return AP1 - AP2;
 }
 
-template <typename RefEvent, typename HypEvent>
+template<typename Real, typename Container>
+Real ComputeNDCG(const Container &errors) {
+  typedef typename Container::value_type ME;
+  // Compute unnormalized DCG
+  Real dcg = 0.0;
+  size_t i = 1;
+  for (auto it = errors.begin(); it != errors.end(); ++it, ++i) {
+    const Real r = it->NH() / static_cast<Real>(it->NH() + it->NR());
+    dcg += (pow(2.0, r) - 1) / log2(i);
+  }
+  // Count total number of references (relevant objects)
+  const auto TR = std::accumulate<typename Container::const_iterator, size_t>(
+      errors.begin(), errors.end(), 0,
+      [](size_t a, const ME &e) -> size_t {
+        return a + e.NR();
+      });
+  Real Z = 0.0;
+  for (i = 1; i <= TR; ++i) {
+    Z += 1.0 / log2(i);
+  }
+  return dcg / Z;
+}
+
+template<typename M>
 double ComputeGlobalAP(
-    const std::vector<Match<RefEvent, HypEvent>>& matches,
-    bool collapse_matches, bool interpolate_precision,
-    bool trapezoid_integral) {
+    const std::vector<M> &matches, bool collapse_matches,
+    bool interpolate_precision, bool trapezoid_integral) {
   std::vector<double> pr, rc;
   if (collapse_matches) {
     // Collapse all events with the same score into a single point in the
@@ -169,28 +224,19 @@ double ComputeGlobalAP(
   return ComputeAP(pr, rc, trapezoid_integral);
 }
 
-template <typename RefEvent, typename HypEvent>
+template<typename Match>
 double ComputeGlobalAP(
-    const std::vector<std::vector<Match<RefEvent, HypEvent>>>& matches_by_query,
+    const std::vector<std::vector<Match>> &matches_by_query,
     bool collapse_matches, bool interpolate_precision,
-    bool trapezoid_integral) {
+    bool trapezoid_integral, bool sort_matches) {
   // Put matches per query into a single vector.
-  std::vector<Match<RefEvent, HypEvent>> all_matches;
+  std::vector<Match> all_matches;
   for (const auto &matches_vector : matches_by_query) {
     for (const auto &match : matches_vector) {
       all_matches.push_back(match);
     }
   }
-  // Sort all matches w.r.t. decreasing score
-  std::sort(all_matches.begin(), all_matches.end(),
-            [](const Match<RefEvent, HypEvent> &a,
-               const Match<RefEvent, HypEvent> &b) -> bool {
-              if (a.HasHyp() && b.HasHyp()) {
-                return a.GetHyp().Score() > b.GetHyp().Score();
-              } else {
-                return a.HasHyp();
-              }
-            });
+  if (sort_matches) { SortMatchesDecreasingScore(&all_matches); }
   // Compute precision and recall curves from the matches
   std::vector<double> pr, rc;
   if (collapse_matches) {
@@ -204,22 +250,14 @@ double ComputeGlobalAP(
   return ComputeAP(pr, rc, trapezoid_integral);
 }
 
-template <typename RefEvent, typename HypEvent>
+template <typename Match>
 double ComputeMeanAP(
-    const std::vector<std::vector<Match<RefEvent, HypEvent>>>& matches_by_query,
+    const std::vector<std::vector<Match>> &matches_by_query,
     bool collapse_matches, bool interpolate_precision,
-    bool trapezoid_integral) {
+    bool trapezoid_integral, bool sort_matches) {
   double sumAP = 0.0;
   for (auto matches_vector : matches_by_query) {
-    std::sort(matches_vector.begin(), matches_vector.end(),
-              [](const Match<RefEvent, HypEvent> &a,
-                 const Match<RefEvent, HypEvent> &b) -> bool {
-                if (a.HasHyp() && b.HasHyp()) {
-                  return a.GetHyp().Score() > b.GetHyp().Score();
-                } else {
-                  return a.HasHyp();
-                }
-              });
+    if (sort_matches) { SortMatchesDecreasingScore(&matches_vector); }
     // Compute precision and recall curves from the matches
     std::vector<double> pr, rc;
     if (collapse_matches) {
@@ -236,27 +274,50 @@ double ComputeMeanAP(
   return matches_by_query.size() > 0 ? sumAP / matches_by_query.size() : 0.0;
 }
 
-template <typename RefEvent, typename HypEvent, typename Map>
-void GroupMatchesByQueryGroup(
-    const std::vector<Match<RefEvent, HypEvent>>& matches,
-    const Map& query_to_group,
-    std::vector<std::vector<Match<RefEvent, HypEvent>>>* matches_by_group) {
-  typedef typename RefEvent::QType QType;
-  typedef typename Map::size_type SType;
-  matches_by_group->clear();
-  std::unordered_map<QType, SType> group2pos;
-  for (const auto &m : matches) {
-    const auto &query = m.HasRef() ? m.GetRef().Query() : m.GetHyp().Query();
-    auto it = query_to_group.find(query);
-    const auto &group = it != query_to_group.end() ? it->second : query;
-    const size_t pos = group2pos.emplace(group, group2pos.size()).first->second;
-    if (pos < matches_by_group->size()) {
-      (*matches_by_group)[pos].push_back(m);
-    } else {
-      matches_by_group->emplace_back();
-      matches_by_group->back().push_back(m);
+template<typename Match>
+double ComputeGlobalNDCG(
+    const std::vector<Match> &matches, bool collapse_matches) {
+  if (collapse_matches) {
+    return ComputeNDCG<double>(CollapseMatches(matches));
+  } else {
+    return ComputeNDCG<double>(GetMatchErrors(matches));
+  }
+}
+
+template<typename Match>
+double ComputeGlobalNDCG(
+    const std::vector<std::vector<Match>> &matches_by_query,
+    bool collapse_matches, bool sort_matches) {
+  // Put matches per query into a single vector.
+  std::vector<Match> all_matches;
+  for (const auto &matches_vector : matches_by_query) {
+    for (const auto &match : matches_vector) {
+      all_matches.push_back(match);
     }
   }
+  if (sort_matches) { SortMatchesDecreasingScore(&all_matches); }
+  if (collapse_matches) {
+    return ComputeNDCG<double>(CollapseMatches(all_matches));
+  } else {
+    return ComputeNDCG<double>(GetMatchErrors(all_matches));
+  }
+}
+
+template <typename Match>
+double ComputeMeanNDCG(
+    const std::vector<std::vector<Match>> &matches_by_query,
+    bool collapse_matches, bool sort_matches) {
+  double sumNDCG = 0.0;
+  for (auto matches_vector : matches_by_query) {
+    if (sort_matches) { SortMatchesDecreasingScore(&matches_vector); }
+    if (collapse_matches) {
+      sumNDCG += ComputeNDCG<double>(CollapseMatches(matches_vector));
+    } else {
+      sumNDCG += ComputeNDCG<double>(GetMatchErrors(matches_vector));
+    }
+  }
+  // Average NDCG accross all queries.
+  return matches_by_query.size() > 0 ? sumNDCG / matches_by_query.size() : 0.0;
 }
 
 }  // namespace core

@@ -52,6 +52,14 @@ class Match {
     return *ref_;
   }
 
+  Match& operator=(const Match& other) {
+    error_ = other.error_;
+    ref_.release(); hyp_.release();
+    if (other.HasRef()) SetRef(other.GetRef());
+    if (other.HasHyp()) SetHyp(other.GetHyp());
+    return *this;
+  }
+
   Match& operator=(Match&& other) {
     error_ = std::move(other.error_);
     ref_ = std::move(other.ref_);

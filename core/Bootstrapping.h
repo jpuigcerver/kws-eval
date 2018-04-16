@@ -84,6 +84,19 @@ double ComputePercentileBootstrapCI(
   return observed_statistic;
 }
 
+template<typename M, typename Statistic>
+double ComputePercentileBootstrapCI(
+    const std::vector<std::vector<M>>& grouped_matches,
+    size_t repetitions, double alpha, size_t random_seed, Statistic statistic,
+    double *lower_bound, double *upper_bound) {
+  typedef typename M::RefEvent RefEvent;
+  typedef typename M::HypEvent HypEvent;
+  MatchesByQuerySampler<RefEvent, HypEvent> sampler(random_seed);
+  return ComputePercentileBootstrapCI(grouped_matches, repetitions,
+                                      alpha, statistic, &sampler,
+                                      lower_bound, upper_bound);
+}
+
 }  // namespace core
 }  // namespace kws
 

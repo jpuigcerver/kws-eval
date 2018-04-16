@@ -14,6 +14,7 @@
 #include "cmd/Parser.h"
 #include "core/Assessment.h"
 #include "core/Bootstrapping.h"
+#include "core/Statistic.h"
 
 namespace kws {
 namespace tools {
@@ -24,6 +25,8 @@ using kws::core::ComputeAP;
 using kws::core::ComputePercentileBootstrapCI;
 using kws::core::ComputePrecisionAndRecall;
 using kws::core::Match;
+using kws::core::Statistic;
+using kws::core::GlobalStatistic;
 
 template<typename E, typename C>
 void filter_events(const C &queryset, std::vector<E> *events) {
@@ -39,11 +42,61 @@ class GenericKwsEvalTool {
  public:
   typedef typename Matcher::RefEvent RefEvent;
   typedef typename Matcher::HypEvent HypEvent;
+  typedef typename Matcher::MatchType MatchType;
 
   GenericKwsEvalTool(RefReader *ref_reader, HypReader *hyp_reader,
                      Matcher *matcher, const std::string &description = "") :
       ref_reader_(ref_reader), hyp_reader_(hyp_reader), matcher_(matcher),
       description_(description) {}
+
+  static void ComputeMeanStatistic(
+      const std::string &statistic_name,
+      const std::vector<std::vector<MatchType>> &grouped_matches,
+      const bool bootstrap, const double bootstrap_alpha,
+      const size_t bootstrap_samples, const size_t bootstrap_seed,
+      const Statistic<MatchType> &statistic) {
+    if (bootstrap) {
+      auto bootstrap_statistic = [&statistic](
+          const std::vector<std::vector<MatchType>> &sample) -> double {
+        return statistic(sample, true);
+      };
+      double lower_bound = 0.0, upper_bound = 0.0;
+      const double value = ComputePercentileBootstrapCI(
+          grouped_matches, bootstrap_samples, bootstrap_alpha, bootstrap_seed,
+          bootstrap_statistic, &lower_bound, &upper_bound);
+      std::cout << "m" << statistic_name << " = " << value
+                << " [" << lower_bound << ", " << upper_bound << "]"
+                << std::endl;
+    } else {
+      const double value = statistic(grouped_matches, false);
+      std::cout << "m" << statistic_name << " = " << value << std::endl;
+    }
+  }
+
+  static void ComputeGlobalStatistic(
+      const std::string &statistic_name,
+      const std::vector<MatchType> &matches,
+      const std::vector<std::vector<MatchType>> &grouped_matches,
+      const bool bootstrap, const double bootstrap_alpha,
+      const size_t bootstrap_samples, const size_t bootstrap_seed,
+      const GlobalStatistic<MatchType> &statistic) {
+    if (bootstrap) {
+      auto bootstrap_statistic = [&statistic](
+          const std::vector<std::vector<MatchType>> &sample) -> double {
+        return statistic(sample, true);
+      };
+      double lower_bound = 0.0, upper_bound = 0.0;
+      const double value = ComputePercentileBootstrapCI(
+          grouped_matches, bootstrap_samples, bootstrap_alpha, bootstrap_seed,
+          bootstrap_statistic, &lower_bound, &upper_bound);
+      std::cout << "g" << statistic_name << " = " << value
+                << " [" << lower_bound << ", " << upper_bound << "]"
+                << std::endl;
+    } else {
+      const double value = statistic(matches);
+      std::cout << "g" << statistic_name << " = " << value << std::endl;
+    }
+  }
 
   int Main(int argc, const char **argv) {
 #ifdef WITH_GLOG
@@ -60,6 +113,8 @@ class GenericKwsEvalTool {
     bool trapezoid_integral = true;
     bool bootstrap_ci_gap = false;
     bool bootstrap_ci_map = false;
+    bool bootstrap_ci_gndcg = false;
+    bool bootstrap_ci_mndcg = false;
     size_t bootstrap_samples = 10000;
     size_t bootstrap_seed = 0x12345;
     double bootstrap_alpha = 0.05;
@@ -100,6 +155,14 @@ class GenericKwsEvalTool {
         "bootstrap_ci_map",
         "Compute bootstrapped confidence intervals for the Mean AP.",
         &bootstrap_ci_map);
+    cmd_parser.RegisterOption(
+        "bootstrap_ci_gndcg",
+        "Compute bootstrapped confidence intervals for the Global NDCG.",
+        &bootstrap_ci_gndcg);
+    cmd_parser.RegisterOption(
+        "bootstrap_ci_mndcg",
+        "Compute bootstrapped confidence intervals for the Mean NDCG.",
+        &bootstrap_ci_mndcg);
     cmd_parser.RegisterOption(
         "bootstrap_samples",
         "Use this number of bootstrapped samples to compute the confidence "
@@ -272,64 +335,36 @@ class GenericKwsEvalTool {
     }
 
     // Group matches by query/group.
-    typedef std::vector<std::vector<Match<RefEvent, HypEvent>>>
-        VectorOfVectorsOfMatches;
-    VectorOfVectorsOfMatches matches_by_group;
+    std::vector<std::vector<MatchType>> matches_by_group;
     core::GroupMatchesByQueryGroup(matches, query2group, &matches_by_group);
 
-    // Compute GLOBAL Average Precision
-    if (bootstrap_ci_gap) {
-      auto gap_statistic =
-          [collapse_matches, interpolated_precision, trapezoid_integral](
-              const VectorOfVectorsOfMatches &sampled) -> double {
-            return core::ComputeGlobalAP(sampled,
-                                         collapse_matches,
-                                         interpolated_precision,
-                                         trapezoid_integral);
-          };
-      core::MatchesByQuerySampler<RefEvent, HypEvent> sampler(bootstrap_seed);
-      double lower_bound = 0.0, upper_bound = 0.0;
-      const double global_ap = core::ComputePercentileBootstrapCI(
-          matches_by_group, bootstrap_samples, bootstrap_alpha, gap_statistic,
-          &sampler, &lower_bound, &upper_bound);
-      std::cout << "gAP = " << global_ap
-                << " [" << lower_bound << ", " << upper_bound << "]"
-                << std::endl;
-    } else {
-      std::cout << "gAP = "
-                << core::ComputeGlobalAP(matches,
-                                         collapse_matches,
-                                         interpolated_precision,
-                                         trapezoid_integral)
-                << std::endl;
-    }
+    // Compute Global Average Precision
+    ComputeGlobalStatistic(
+        "AP", matches, matches_by_group, bootstrap_ci_gap, bootstrap_alpha,
+        bootstrap_samples, bootstrap_seed,
+        core::GlobalAP<MatchType>(collapse_matches,
+                                  interpolated_precision,
+                                  trapezoid_integral));
 
-    // Compute MEAN Average Precision
-    if (bootstrap_ci_map) {
-      auto map_statistic =
-          [collapse_matches, interpolated_precision, trapezoid_integral](
-              const VectorOfVectorsOfMatches &sampled) -> double {
-            return core::ComputeMeanAP(sampled,
-                                       collapse_matches,
-                                       interpolated_precision,
-                                       trapezoid_integral);
-          };
-      core::MatchesByQuerySampler<RefEvent, HypEvent> sampler(bootstrap_seed);
-      double lower_bound = 0.0, upper_bound = 0.0;
-      const double mean_ap = core::ComputePercentileBootstrapCI(
-          matches_by_group, bootstrap_samples, bootstrap_alpha, map_statistic,
-          &sampler, &lower_bound, &upper_bound);
-      std::cout << "mAP = " << mean_ap
-                << " [" << lower_bound << ", " << upper_bound << "]"
-                << std::endl;
-    } else {
-      std::cout << "mAP = "
-                << core::ComputeMeanAP(matches_by_group,
-                                       collapse_matches,
-                                       interpolated_precision,
-                                       trapezoid_integral)
-                << std::endl;
-    }
+    // Compute Mean Average Precision
+    ComputeMeanStatistic(
+        "AP", matches_by_group, bootstrap_ci_map, bootstrap_alpha,
+        bootstrap_samples, bootstrap_seed,
+        core::MeanAP<MatchType>(collapse_matches,
+                                interpolated_precision,
+                                trapezoid_integral));
+
+    // Compute Global NDCG
+    ComputeGlobalStatistic(
+        "NDCG", matches, matches_by_group, bootstrap_ci_gndcg, bootstrap_alpha,
+        bootstrap_samples, bootstrap_seed,
+        core::GlobalNDCG<MatchType>(collapse_matches));
+
+    // Compute Mean NDCG
+    ComputeMeanStatistic(
+        "NDCG", matches_by_group, bootstrap_ci_mndcg, bootstrap_alpha,
+        bootstrap_samples, bootstrap_seed,
+        core::MeanNDCG<MatchType>(collapse_matches));
 
     return 0;
   }

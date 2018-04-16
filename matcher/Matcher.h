@@ -13,7 +13,8 @@ class Matcher {
  public:
   typedef RE RefEvent;
   typedef HE HypEvent;
-  typedef typename std::vector<kws::core::Match<RE, HE>> Result;
+  typedef kws::core::Match<RefEvent, HypEvent> MatchType;
+  typedef typename std::vector<MatchType> Result;
 
   virtual ~Matcher() {}
 
