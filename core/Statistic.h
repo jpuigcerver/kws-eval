@@ -74,9 +74,9 @@ class MeanAP : public Statistic<Match> {
   double operator()(
       const std::vector<std::vector<Match>> &grouped_matches,
       bool sort_matches) const override {
-    return ComputeGlobalAP(grouped_matches, Statistic<Match>::collapse_matches_,
-                           interpolate_precision_, trapezoid_integral_,
-                           sort_matches);
+    return ComputeMeanAP(grouped_matches, Statistic<Match>::collapse_matches_,
+                         interpolate_precision_, trapezoid_integral_,
+                         sort_matches);
   }
 
  private:
