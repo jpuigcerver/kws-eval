@@ -159,9 +159,9 @@ TEST(AssessmentTest, ComputeNDCG) {
   // Generic NDCG
   const double DCG =
       1.0 / log2(2.0) +
-      (pow(2.0, 0.8) - 1) / log2(3.0) +
+      (exp2(0.8) - 1) / log2(3.0) +
       1.0 / log2(5.0) +
-      (pow(2.0, 0.2) - 1) / log2(6.0);
+      (exp2(0.2) - 1) / log2(6.0);
   const double Z =
       1.0 / log2(2.0) +
       1.0 / log2(3.0) +
@@ -193,13 +193,24 @@ TEST(AssessmentTest, ComputeNDCG) {
   }));
   // Generic NDCG collapsed events
   EXPECT_FLOAT_EQ(
-      (1 / log2(2) +
-          (pow(2.0, 0.8) - 1) / log2(3) +
-          (pow(2.0, 0.25) - 1) / log2(4)) /
-          (1 / log2(2) + 1 / log2(3) + 1 / log2(4)),
+      (   // Rank 1
+          1.0 / log2(2) +
+          // Rank 2
+          (exp2(0.5) - 1) / log2(3) +
+          (exp2(0.5) - 1) / log2(4) +
+          // Rank 3
+          (exp2(0.25) - 1) / log2(5) +
+          (exp2(0.25) - 1) / log2(6) +
+          (exp2(0.25) - 1) / log2(7) +
+          (exp2(0.25) - 1) / log2(8) ) /
+      (   1.0 / log2(2) +
+          1.0 / log2(3) +
+          1.0 / log2(4) +
+          1.0 / log2(5) +
+          1.0 / log2(6) ),
       ComputeNDCG<double>(std::vector<MatchErrorCounts>{
-          MatchErrorCounts(0.0f, 0.0f, 1, 1),
-          MatchErrorCounts(1.0f, 0.0f, 5, 5),
-          MatchErrorCounts(3.0f, 1.0f, 4, 2),
+          MatchErrorCounts(0.0, 0.0, 1, 1),
+          MatchErrorCounts(1.0, 0.0, 2, 2),
+          MatchErrorCounts(3.0, 1.0, 4, 2),
   }));
 }

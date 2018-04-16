@@ -38,6 +38,14 @@ void GroupMatchesByQueryGroup(
   }
 }
 
+template <typename Container>
+size_t NumTotalReferences(const Container& match_errors) {
+  return std::accumulate(match_errors.begin(), match_errors.end(), size_t(0),
+                         [](size_t a, const MatchError &e) -> size_t {
+                           return a + e.NR();
+                         });
+}
+
 // Collapse all matches with the same hypothesis score into a single point
 // into the Recall-Precision curve.
 // E.g:
@@ -105,13 +113,7 @@ void ComputePrecisionAndRecall(
                 "Errors must be descendant of MatchError class.");
   pr->clear();
   rc->clear();
-
-  // Count total number of references
-  const auto TR =
-      std::accumulate(errors.begin(), errors.end(), 0,
-                      [](size_t a, const ME &e) -> size_t {
-                        return a + e.NR();
-                      });
+  const auto TR = NumTotalReferences(errors);
 
   size_t sumNR = 0, sumNH = 0;
   Real sumFP = 0, sumFN = 0;
@@ -145,12 +147,7 @@ Real ComputeAP(const Container &errors, const std::vector<Real> &pr,
   static_assert(std::is_base_of<MatchError, ME>::value,
                 "Errors must be descendant of MatchError class.");
   assert(pr.size() == errors.size());
-  // Count total number of references (relevant objects)
-  const auto TR =
-      std::accumulate(errors.begin(), errors.end(), 0,
-                      [](size_t a, const ME &e) -> size_t {
-                        return a + e.NR();
-                      });
+  const auto TR = NumTotalReferences(errors);
   // AP = 1/TR * (\sum_{i} pr(i) * tp(i))
   Real sumAP = 0.0;
   for (size_t i = 0; i < pr.size(); ++i) {
@@ -172,7 +169,7 @@ Real ComputeAP(const std::vector<Real> &pr, const std::vector<Real> &rc,
   for (size_t i = 0; i < pr.size(); ++i) {
     AP1 += rc[i] * (trapezoid && i > 0 ? 0.5 * (pr[i] + pr[i - 1]) : pr[i]);
   }
-  Real AP2 = 0.0f;
+  Real AP2 = 0.0;
   for (size_t i = 1; i < pr.size(); ++i) {
     AP2 += rc[i - 1] * (trapezoid ? 0.5 * (pr[i] + pr[i - 1]) : pr[i]);
   }
@@ -181,26 +178,27 @@ Real ComputeAP(const std::vector<Real> &pr, const std::vector<Real> &rc,
 
 template<typename Real, typename Container>
 Real ComputeNDCG(const Container &errors) {
-  // Compute unnormalized DCG
-  Real dcg = 0.0;
-  size_t i = 1, TR = 0;
-  for (auto it = errors.begin(); it != errors.end(); ++it, ++i) {
-    if (it->NH() > 0) {
-      dcg += (pow(2.0, 1.0 - (it->FP() / it->NH())) - 1) / log2(i + 1);
-    }
-    if (it->NR() > 0) {
-      ++TR;
-    }
-
-  }
+  const auto TR = NumTotalReferences(errors);
   if (TR > 0) {
-    Real Z = 0.0;
-    for (i = 1; i <= TR; ++i) {
-      Z += 1.0 / log2(i + 1);
+    // Compute unnormalized DCG
+    Real dcg = 0;
+    size_t i = 1;
+    for (auto it = errors.begin(); it != errors.end(); ++it) {
+      if (it->NH() > 0) {
+        const Real r = 1 - it->FP() / it->NH();
+        for (size_t j = 0; j < it->NH(); ++j, ++i) {
+          dcg += (exp2(r) - 1) / log2(i + 1);
+        }
+      }
     }
-    return dcg / Z;
+    // Compute normalization factor
+    Real z = 0;
+    for (size_t j = 1; j <= TR; ++j) {
+      z += 1 / log2(j + 1);
+    }
+    return dcg / z;
   } else {
-    return 0.0;
+    return 0;
   }
 }
 
