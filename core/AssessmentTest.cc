@@ -146,6 +146,8 @@ TEST(AssessmentTest, ComputeAP) {
 }
 
 TEST(AssessmentTest, ComputeNDCG) {
+  // NDCG, empty errors
+  EXPECT_FLOAT_EQ(0.0, ComputeNDCG<double>(std::vector<MatchError>{}));
   // Perfect NDCG
   EXPECT_FLOAT_EQ(
       1.0,
@@ -176,4 +178,28 @@ TEST(AssessmentTest, ComputeNDCG) {
           MatchError(0.8f, 0.7f),  // mostly false pos. & neg., TD = 5, TR = 4
           MatchError(0.0f, 1.0f),  // missed reference, TD = 5, TR = 5
       }));
+  // Pefect NDCG with collapsed events
+  EXPECT_FLOAT_EQ(
+      1.0,
+      ComputeNDCG<double>(std::vector<MatchErrorCounts>{
+        MatchErrorCounts(0.0f, 0.0f, 4, 4)}));
+  // NDCG, all missing
+  EXPECT_FLOAT_EQ(0.0, ComputeNDCG<double>(std::vector<MatchErrorCounts>{
+      MatchErrorCounts(0.0f, 1.0f, 0, 5)
+  }));
+  // NDCG, all false positive
+  EXPECT_FLOAT_EQ(0.0, ComputeNDCG<double>(std::vector<MatchErrorCounts>{
+      MatchErrorCounts(1.0f, 1.0f, 9, 4)
+  }));
+  // Generic NDCG collapsed events
+  EXPECT_FLOAT_EQ(
+      (1 / log2(2) +
+          (pow(2.0, 0.8) - 1) / log2(3) +
+          (pow(2.0, 0.25) - 1) / log2(4)) /
+          (1 / log2(2) + 1 / log2(3) + 1 / log2(4)),
+      ComputeNDCG<double>(std::vector<MatchErrorCounts>{
+          MatchErrorCounts(0.0f, 0.0f, 1, 1),
+          MatchErrorCounts(0.2f, 0.0f, 5, 5),
+          MatchErrorCounts(0.75f, 0.5f, 4, 2),
+  }));
 }

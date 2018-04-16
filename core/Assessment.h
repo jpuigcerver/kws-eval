@@ -184,23 +184,25 @@ Real ComputeNDCG(const Container &errors) {
   typedef typename Container::value_type ME;
   // Compute unnormalized DCG
   Real dcg = 0.0;
-  size_t i = 1;
+  size_t i = 1, TR = 0;
   for (auto it = errors.begin(); it != errors.end(); ++it, ++i) {
     if (it->NH() > 0) {
       dcg += (pow(2.0, 1.0 - it->FP()) - 1) / log2(i + 1);
     }
+    if (it->NR() > 0) {
+      ++TR;
+    }
+
   }
-  // Count total number of references (relevant objects)
-  const auto TR = std::accumulate<typename Container::const_iterator, size_t>(
-      errors.begin(), errors.end(), 0,
-      [](size_t a, const ME &e) -> size_t {
-        return a + e.NR();
-      });
-  Real Z = 0.0;
-  for (i = 1; i <= TR; ++i) {
-    Z += 1.0 / log2(i + 1);
+  if (TR > 0) {
+    Real Z = 0.0;
+    for (i = 1; i <= TR; ++i) {
+      Z += 1.0 / log2(i + 1);
+    }
+    return dcg / Z;
+  } else {
+    return 0.0;
   }
-  return dcg / Z;
 }
 
 template<typename Match>
