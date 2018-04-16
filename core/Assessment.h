@@ -186,8 +186,10 @@ Real ComputeNDCG(const Container &errors) {
   Real dcg = 0.0;
   size_t i = 1;
   for (auto it = errors.begin(); it != errors.end(); ++it, ++i) {
-    const Real r = it->NH() / static_cast<Real>(it->NH() + it->NR());
-    dcg += (pow(2.0, r) - 1) / log2(i);
+    if (it->NH() > 0) {
+      const Real r = (it->NH() - it->FP()) / static_cast<Real>(it->NH());
+      dcg += (pow(2.0, r) - 1) / log2(i + 1);
+    }
   }
   // Count total number of references (relevant objects)
   const auto TR = std::accumulate<typename Container::const_iterator, size_t>(
@@ -197,14 +199,14 @@ Real ComputeNDCG(const Container &errors) {
       });
   Real Z = 0.0;
   for (i = 1; i <= TR; ++i) {
-    Z += 1.0 / log2(i);
+    Z += 1.0 / log2(i + 1);
   }
   return dcg / Z;
 }
 
-template<typename M>
+template<typename Match>
 double ComputeGlobalAP(
-    const std::vector<M> &matches, bool collapse_matches,
+    const std::vector<Match> &matches, bool collapse_matches,
     bool interpolate_precision, bool trapezoid_integral) {
   std::vector<double> pr, rc;
   if (collapse_matches) {
@@ -250,7 +252,7 @@ double ComputeGlobalAP(
   return ComputeAP(pr, rc, trapezoid_integral);
 }
 
-template <typename Match>
+template<typename Match>
 double ComputeMeanAP(
     const std::vector<std::vector<Match>> &matches_by_query,
     bool collapse_matches, bool interpolate_precision,
@@ -303,7 +305,7 @@ double ComputeGlobalNDCG(
   }
 }
 
-template <typename Match>
+template<typename Match>
 double ComputeMeanNDCG(
     const std::vector<std::vector<Match>> &matches_by_query,
     bool collapse_matches, bool sort_matches) {

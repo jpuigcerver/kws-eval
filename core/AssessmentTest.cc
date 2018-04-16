@@ -15,6 +15,8 @@ using kws::core::MatchError;
 using kws::core::MatchErrorCounts;
 using kws::core::ScoredEvent;
 using kws::core::testing::DummyLocation;
+using kws::core::ComputeAP;
+using kws::core::ComputeNDCG;
 
 using testing::IsEmpty;
 using testing::ElementsAre;
@@ -96,12 +98,12 @@ TEST(AssessmentTest, ComputePrecisionAndRecall) {
   {
     std::vector<float> pr, rc;
     std::vector<MatchError> m{
-      MatchError(0.0f, 0.0f),  // perfect hit, TD = TR = 1
-      MatchError(0.2f, 0.0f),  // bbox much bigger than reference, TD = TR = 2
-      MatchError(1.0f, 0.0f),  // completely false positive, TD = 3, TR = 2
-      MatchError(0.0f, 0.0f),  // another perfect match, TD = 4, TR = 3
-      MatchError(0.8f, 0.7f),  // mostly false pos. & neg., TD = 5, TR = 4
-      MatchError(0.0f, 1.0f),  // missed reference, TD = 5, TR = 5
+        MatchError(0.0f, 0.0f),  // perfect hit, TD = TR = 1
+        MatchError(0.2f, 0.0f),  // bbox much bigger than reference, TD = TR = 2
+        MatchError(1.0f, 0.0f),  // completely false positive, TD = 3, TR = 2
+        MatchError(0.0f, 0.0f),  // another perfect match, TD = 4, TR = 3
+        MatchError(0.8f, 0.7f),  // mostly false pos. & neg., TD = 5, TR = 4
+        MatchError(0.0f, 1.0f),  // missed reference, TD = 5, TR = 5
     };
     ComputePrecisionAndRecall(m, false, &pr, &rc);
     // Check precision
@@ -121,4 +123,57 @@ TEST(AssessmentTest, ComputePrecisionAndRecall) {
     EXPECT_FLOAT_EQ(3.3f / 5.0f, rc[4]);
     EXPECT_FLOAT_EQ(3.3f / 5.0f, rc[5]);
   }
+}
+
+TEST(AssessmentTest, ComputeAP) {
+  // Perfect AP
+  EXPECT_FLOAT_EQ(
+      1.0,
+      ComputeAP(std::vector<double>{1.0}, std::vector<double>{1.0}, false));
+  // Worst AP
+  EXPECT_FLOAT_EQ(
+      0.0,
+      ComputeAP(std::vector<double>{0.0}, std::vector<double>{0.0}, false));
+  EXPECT_FLOAT_EQ(
+      1.0 * 0.2 + 0.8 * 0.2 + 0.3 * 0.5,
+      ComputeAP(std::vector<double>{1.0, 0.7, 0.8, 0.3},
+                std::vector<double>{0.2, 0.2, 0.4, 0.9}, false));
+  // Trapezoid interpolation
+  EXPECT_FLOAT_EQ(
+      1.0 * 0.2 + 0.75 * 0.2 + 0.55 * 0.5,
+      ComputeAP(std::vector<double>{1.0, 0.7, 0.8, 0.3},
+                std::vector<double>{0.2, 0.2, 0.4, 0.9}, true));
+}
+
+TEST(AssessmentTest, ComputeNDCG) {
+  // Perfect NDCG
+  EXPECT_FLOAT_EQ(
+      1.0,
+      ComputeNDCG<double>(std::vector<MatchError>{MatchError(0.0f, 0.0f)}));
+  // Worst NDCG
+  EXPECT_FLOAT_EQ(
+      0.0,
+      ComputeNDCG<double>(std::vector<MatchError>{MatchError(0.0f, 1.0f)}));
+  // Generic NDCG
+  const double DCG =
+      1.0 / log2(2.0) +
+      (pow(2.0, 0.8) - 1) / log2(3.0) +
+      1.0 / log2(5.0) +
+      (pow(2.0, 0.2) - 1) / log2(6.0);
+  const double Z =
+      1.0 / log2(2.0) +
+      1.0 / log2(3.0) +
+      1.0 / log2(4.0) +
+      1.0 / log2(5.0) +
+      1.0 / log2(6.0);
+  EXPECT_FLOAT_EQ(
+      DCG / Z,
+      ComputeNDCG<double>(std::vector<MatchError>{
+          MatchError(0.0f, 0.0f),  // perfect hit, TD = TR = 1
+          MatchError(0.2f, 0.0f),  // bbox bigger than reference, TD = TR = 2
+          MatchError(1.0f, 0.0f),  // completely false positive, TD = 3, TR = 2
+          MatchError(0.0f, 0.0f),  // another perfect match, TD = 4, TR = 3
+          MatchError(0.8f, 0.7f),  // mostly false pos. & neg., TD = 5, TR = 4
+          MatchError(0.0f, 1.0f),  // missed reference, TD = 5, TR = 5
+      }));
 }
