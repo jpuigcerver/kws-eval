@@ -103,11 +103,12 @@ class GenericKwsEvalTool {
     google::InitGoogleLogging(argv[0]);
 #endif
 
-    std::string ref_filename = "";
-    std::string hyp_filename = "";
-    std::string queryset_filename = "";
-    std::string querygroups_filename = "";
-    std::string matches_filename = "";
+    std::string ref_filename;
+    std::string hyp_filename;
+    std::string queryset_filename;
+    std::string querygroups_filename;
+    std::string matches_filename;
+    std::string sort_criterion = "desc";
     bool collapse_matches = true;
     bool interpolated_precision = true;
     bool trapezoid_integral = true;
@@ -176,6 +177,11 @@ class GenericKwsEvalTool {
         "bootstrap_alpha",
         "Use this alpha value to compute confidence intervals.",
         &bootstrap_alpha);
+    cmd_parser.RegisterOption(
+        "sort",
+        "Sort the hypotheses according to this criterion. "
+        "Values: \"asc\", \"desc\", \"none\"",
+        &sort_criterion);
     // Arguments
     cmd_parser.RegisterArgument(
         "references",
@@ -294,8 +300,19 @@ class GenericKwsEvalTool {
       }
     }
 
-    // Sort hypotheses in decreasing order of their score.
-    std::sort(hyp_events.begin(), hyp_events.end(), std::greater<HypEvent>());
+    if (sort_criterion == "desc") {
+      // Sort hypotheses in descending order of their score.
+      std::sort(hyp_events.begin(), hyp_events.end(),
+                std::greater<HypEvent>());
+    } else if (sort_criterion == "asc") {
+      // Sort hypotheses in ascending order of their score.
+      std::sort(hyp_events.begin(), hyp_events.end(),
+                std::less<HypEvent>());
+    } else if (sort_criterion != "none") {
+      // Unknown sorting criterion.
+      std::cerr << "WARN: Ignoring sorting criterion \"" << sort_criterion
+                << "\". Hypotheses won't be sorted." << std::endl;
+    }
 
     // Match hypothesis events against the references.
     const auto matches = matcher_->Match(ref_events, hyp_events);
