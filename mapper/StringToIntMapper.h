@@ -22,6 +22,9 @@ class StringToIntMapper : public Mapper<std::string, Int> {
 
   StringToIntMapper() : impl_(new Impl), own_(true) {}
 
+  StringToIntMapper(const StringToIntMapper &other)
+      : impl_(other.impl_), own_(false) {}
+
   explicit StringToIntMapper(Impl *impl) : impl_(impl), own_(false) {}
 
   StringToIntMapper(Impl *impl, bool own) : impl_(impl), own_(own) {}

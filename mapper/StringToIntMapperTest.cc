@@ -6,14 +6,12 @@ using kws::mapper::StringToIntMapper;
 
 TEST(StringToIntMapper, Constructors) {
   StringToIntMapper<int> m1;
-
+  StringToIntMapper<int> m2(m1);
   std::unordered_map<std::string, int> ht;
-  StringToIntMapper<int> m2(&ht);
-
-  StringToIntMapper<int> m3(&ht, false);
-  StringToIntMapper<int> m4(new std::unordered_map<std::string, int>, true);
+  StringToIntMapper<int> m3(&ht);
+  StringToIntMapper<int> m4(&ht, false);
+  StringToIntMapper<int> m5(new std::unordered_map<std::string, int>(), true);
 }
-
 
 TEST(StringToIntMapper, Simple) {
   std::unordered_map<std::string, int> ht;

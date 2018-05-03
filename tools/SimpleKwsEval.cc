@@ -28,8 +28,8 @@ int main(int argc, const char **argv) {
   typedef PlainTextMapEventReader<HypMapper> HypReader;
   typedef SimpleMatcher<RefEvent, HypEvent> Matcher;
 
-  StrMapper str2int_mapper;
-  RefMapper ref_mapper(&str2int_mapper);
+  StrMapper str_mapper;
+  RefMapper ref_mapper(&str_mapper);
   HypMapper hyp_mapper(&ref_mapper);
 
   RefReader ref_reader(&ref_mapper);
@@ -42,7 +42,7 @@ int main(int argc, const char **argv) {
       &ref_reader,
       &hyp_reader,
       &matcher,
-      &str2int_mapper,
+      &str_mapper,
       description);
   return tool.Main(argc, argv);
 }
