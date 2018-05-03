@@ -14,23 +14,28 @@ using kws::matcher::SimpleMatcher;
 using kws::reader::PlainTextReader;
 using kws::scorer::IntersectionOverHypothesisAreaScorer;
 using kws::tools::GenericKwsEvalTool;
+using kws::mapper::IdentityMapper;
 
-int main(int argc, const char** argv) {
+int main(int argc, const char **argv) {
   const std::string description =
       "  Official evaluation tool for ICDAR2017 H-KWS Competition.";
 
   typedef ShapedEvent<std::string, DocumentBoundingBox<uint32_t>> RefEvent;
   typedef ScoredEvent<RefEvent> HypEvent;
+  typedef PlainTextReader<RefEvent> RefReader;
+  typedef PlainTextReader<HypEvent> HypReader;
+  typedef SimpleMatcher<RefEvent, HypEvent> Matcher;
+  typedef IdentityMapper<std::string> StrMapper;
 
-  PlainTextReader<RefEvent> ref_reader;
-  PlainTextReader<HypEvent> hyp_reader;
+  RefReader ref_reader;
+  HypReader hyp_reader;
 
   IntersectionOverHypothesisAreaScorer<RefEvent, HypEvent> scorer(0.5);
-  SimpleMatcher<RefEvent, HypEvent> matcher(&scorer);
+  Matcher matcher(&scorer);
 
-  GenericKwsEvalTool<PlainTextReader<RefEvent>,PlainTextReader<HypEvent>,
-      SimpleMatcher<RefEvent, HypEvent>> tool(&ref_reader, &hyp_reader,
-                                              &matcher, description);
+  StrMapper query_mapper;
+  GenericKwsEvalTool<RefReader, HypReader, Matcher, StrMapper> tool(
+      &ref_reader, &hyp_reader, &matcher, &query_mapper, description);
 
   return tool.Main(argc, argv);
 }

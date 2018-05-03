@@ -22,6 +22,8 @@ class ScoredEvent : public E {
   ScoredEvent(const QType& query, const LType& location, float s) :
       E(query, location), score_(s) {}
 
+  ScoredEvent(const E& event, float s) : E(event), score_(s) {}
+
   virtual bool operator==(const ScoredEvent& other) const {
     return score_ == other.score_ && Base::operator==(other);
   }

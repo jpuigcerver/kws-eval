@@ -6,41 +6,22 @@
 #include <sstream>
 #include <vector>
 
+#include "reader/PlainTextMapEventReader.h"
+#include "mapper/IdentityMapper.h"
+
 namespace kws {
 namespace reader {
 
-template <typename E>
-class PlainTextReader {
- public:
-  bool Read(std::istream* is, std::vector<E>* events) const {
-    events->clear();
-    std::string buff;
-    for (size_t n = 1; std::getline(*is, buff); ++n) {
-      std::istringstream iss(buff);
-      // Skip whitespaces
-      iss >> std::ws;
-      if (iss.peek() == '#') continue;   // Comment line
-      if (iss.eof()) continue;           // Empty line
-      // Read event, and consume all whitespaces at the end of the line.
-      E event;
-      iss >> event;
-      if (!iss.eof()) iss >> std::ws;
-      if (iss.fail() || !iss.eof()) {
-        std::cerr << "ERROR: Failed to read event from line " << n << std::endl;
-        return false;
-      }
-      events->push_back(event);
-    }
-    return is->eof();
-  }
+using kws::mapper::IdentityMapper;
 
-  bool Read(const std::string& filename, std::vector<E>* events) const {
-    std::ifstream fs(filename, std::ios_base::in);
-    if (!fs.is_open()) return false;
-    const bool r = Read(&fs, events);
-    fs.close();
-    return r;
-  }
+template<typename E>
+class PlainTextReader : public PlainTextMapEventReader<IdentityMapper<E>> {
+ public:
+  typedef PlainTextMapEventReader<IdentityMapper<E>> BaseType;
+  PlainTextReader() : BaseType(&mapper) {}
+
+ protected:
+  IdentityMapper<E> mapper;
 };
 
 }  // namespace reader

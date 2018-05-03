@@ -15,6 +15,7 @@
 #include "core/Assessment.h"
 #include "core/Bootstrapping.h"
 #include "core/Statistic.h"
+#include "mapper/IdentityMapper.h"
 
 namespace kws {
 namespace tools {
@@ -27,6 +28,7 @@ using kws::core::ComputePrecisionAndRecall;
 using kws::core::Match;
 using kws::core::Statistic;
 using kws::core::GlobalStatistic;
+using kws::mapper::IdentityMapper;
 
 template<typename E, typename C>
 void filter_events(const C &queryset, std::vector<E> *events) {
@@ -37,17 +39,20 @@ void filter_events(const C &queryset, std::vector<E> *events) {
   }
 }
 
-template<class RefReader, class HypReader, class Matcher>
+template<class RefReader, class HypReader, class Matcher, class QueryMapper>
 class GenericKwsEvalTool {
  public:
   typedef typename Matcher::RefEvent RefEvent;
   typedef typename Matcher::HypEvent HypEvent;
   typedef typename Matcher::MatchType MatchType;
 
+  typedef typename QueryMapper::OutputType QType;
+
   GenericKwsEvalTool(RefReader *ref_reader, HypReader *hyp_reader,
-                     Matcher *matcher, const std::string &description = "") :
+                     Matcher *matcher, QueryMapper *query_mapper,
+                     const std::string &description = "") :
       ref_reader_(ref_reader), hyp_reader_(hyp_reader), matcher_(matcher),
-      description_(description) {}
+      query_mapper_(query_mapper), description_(description) {}
 
   static void ComputeMeanStatistic(
       const std::string &statistic_name,
@@ -229,8 +234,8 @@ class GenericKwsEvalTool {
               << hyp_events.size()
               << std::endl;
 
-    std::map<std::string, std::string> query2group;
-    std::map<std::string, std::vector<std::string>> group2query;
+    std::map<QType, QType> query2group;
+    std::map<QType, std::vector<QType>> group2query;
 
     // If a queryset filename was given, filter out events from queries not in
     // this file.
@@ -241,8 +246,11 @@ class GenericKwsEvalTool {
                   << "\" could not be read!" << std::endl;
         return 1;
       }
-      std::string q;
-      while (qfs >> q) { query2group[q] = q; }
+      std::string qt;
+      while (qfs >> qt) {
+        auto q = (*query_mapper_)(qt);
+        query2group[q] = q;
+      }
       qfs.close();
       std::cerr << "INFO: " << query2group.size()
                 << " queries were read from \""
@@ -256,9 +264,9 @@ class GenericKwsEvalTool {
       }
       std::string line, s;
       while (std::getline(qfs, line)) {
-        std::vector<std::string> fields;
+        std::vector<QType> fields;
         std::istringstream iss(line);
-        while (iss >> s) { fields.push_back(s); }
+        while (iss >> s) { fields.push_back((*query_mapper_)(s)); }
         if (fields.size() < 2) {
           std::cerr << "ERROR: Query groups file \"" << querygroups_filename
                     << "\" has a wrong format!" << std::endl;
@@ -291,7 +299,7 @@ class GenericKwsEvalTool {
       }
       // Add values to the group2query map
       for (const auto &kv : query2group) {
-        group2query.emplace(kv.second, std::vector<std::string>())
+        group2query.emplace(kv.second, std::vector<QType>())
             .first->second.push_back(kv.first);
       }
       if (!querygroups_filename.empty()) {
@@ -315,7 +323,9 @@ class GenericKwsEvalTool {
     }
 
     // Match hypothesis events against the references.
+    std::cerr << "INFO: Computing matches..." << std::endl;
     const auto matches = matcher_->Match(ref_events, hyp_events);
+    ref_events.clear(); hyp_events.clear(); // These are not needed anymore
 
     // Optionally, dump raw matches to the given file.
     if (!matches_filename.empty()) {
@@ -390,6 +400,7 @@ class GenericKwsEvalTool {
   RefReader *ref_reader_;
   HypReader *hyp_reader_;
   Matcher *matcher_;
+  QueryMapper* query_mapper_;
   std::string description_;
 };
 
