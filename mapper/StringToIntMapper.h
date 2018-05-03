@@ -1,6 +1,8 @@
 #ifndef MAPPER_STRINGTOINTMAPPER_H_
 #define MAPPER_STRINGTOINTMAPPER_H_
 
+#include <exception>
+#include <limits>
 #include <string>
 #include <unordered_map>
 
@@ -12,6 +14,8 @@ namespace mapper {
 template<typename Int, typename M = std::unordered_map<std::string, Int>>
 class StringToIntMapper : public Mapper<std::string, Int> {
  public:
+  static_assert(std::is_integral<Int>::value, "Integral type required");
+
   typedef M Impl;
   typedef typename Mapper<std::string, Int>::InputType InputType;
   typedef typename Mapper<std::string, Int>::OutputType OutputType;
@@ -33,12 +37,19 @@ class StringToIntMapper : public Mapper<std::string, Int> {
     if (it != impl_->end()) {
       return it->second;
     } else {
-      assert(impl_->size() < std::numeric_limits<Int>::max());
-      return impl_->emplace_hint(it, input, impl_->size())->second;
+      if (impl_->size() < kMaxSize) {
+        return impl_->emplace_hint(it, input, impl_->size())->second;
+      } else {
+        throw std::range_error(
+            "Max size reached (" + std::to_string(kMaxSize) + ")");
+      }
     }
   }
 
  private:
+  static constexpr size_t kMaxSize =
+      1 + static_cast<size_t>(std::numeric_limits<Int>::max());
+
   Impl *impl_;
   bool own_;
 };

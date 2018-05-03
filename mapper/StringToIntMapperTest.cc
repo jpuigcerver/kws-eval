@@ -4,9 +4,16 @@
 
 using kws::mapper::StringToIntMapper;
 
-TEST(StringToIntMapper, DefaultConstructor) {
-  StringToIntMapper<int> m;
+TEST(StringToIntMapper, Constructors) {
+  StringToIntMapper<int> m1;
+
+  std::unordered_map<std::string, int> ht;
+  StringToIntMapper<int> m2(&ht);
+
+  StringToIntMapper<int> m3(&ht, false);
+  StringToIntMapper<int> m4(new std::unordered_map<std::string, int>, true);
 }
+
 
 TEST(StringToIntMapper, Simple) {
   std::unordered_map<std::string, int> ht;
@@ -17,13 +24,11 @@ TEST(StringToIntMapper, Simple) {
   EXPECT_EQ(m("s3"), 2);
 }
 
-TEST(StringToIntMapper, AssertionFailed) {
+TEST(StringToIntMapper, RangeErrorException) {
   std::unordered_map<std::string, int8_t> ht;
   StringToIntMapper<int8_t> m(&ht);
-  for (int8_t i = 0; i <= 126; ++i) {
+  for (uint8_t i = 0; i <= 127; ++i) {
     EXPECT_EQ(m("s" + std::to_string(i)), i);
   }
-#ifndef NDEBUG
-  EXPECT_DEATH(m("sssss"), "Assertion .* failed.");
-#endif
+  EXPECT_THROW(m("except"), std::range_error);
 }

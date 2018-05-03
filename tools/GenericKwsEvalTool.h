@@ -321,6 +321,8 @@ class GenericKwsEvalTool {
       std::cerr << "WARN: Ignoring sorting criterion \"" << sort_criterion
                 << "\". Hypotheses won't be sorted." << std::endl;
     }
+    const size_t num_hyp_events = hyp_events.size();
+
 
     // Match hypothesis events against the references.
     std::cerr << "INFO: Computing matches..." << std::endl;
@@ -349,14 +351,14 @@ class GenericKwsEvalTool {
       // Count total hits + false positives.
       size_t nh = 0;
       for (const auto &m : matches) { nh += m.GetError().NH(); }
-      if (nh < hyp_events.size()) {
+      if (nh < num_hyp_events) {
         std::cerr << "INFO: Effective number of hypotheses is " << nh << ". "
                   << "The rest of hypotheses were considered repetitions "
                   << "of some other match, and ignored." << std::endl;
-      } else if (nh > hyp_events.size()) {
+      } else if (nh > num_hyp_events) {
         std::cerr << "ERROR: Effective number of hypotheses IS GREATER "
                   << "than the original number! This should not happen ever, "
-                  << "contact organizers." << std::endl;
+                  << "contact the author." << std::endl;
         return 1;
       }
     }
