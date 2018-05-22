@@ -103,6 +103,55 @@ class GenericKwsEvalTool {
     }
   }
 
+  static void WriteGlobalRPCurve(
+      const std::string& filename,
+      const std::vector<MatchType>& matches,
+      const size_t num_points, const bool collapse_matches,
+      const bool interpolated_precision, const bool linear_interpolation) {
+    std::vector<double> pr, rc;
+    core::ComputePrecisionAndRecall(
+        matches, collapse_matches, interpolated_precision,
+        &pr, &rc);
+    std::vector<double> sampled_rc, sampled_pr;
+    core::GetEvenlyDistributedPoints01Interval(num_points, &sampled_rc);
+    core::SampleCurveAtGivenPoints(
+        rc, pr, sampled_rc, &sampled_pr, linear_interpolation);
+    core::WriteCurveToFile(filename, sampled_rc, sampled_pr);
+  }
+
+  static void WriteMeanRPCurve(
+      const std::string& filename,
+      const std::vector<std::vector<MatchType>>& matches_by_group,
+      const size_t num_points, const bool collapse_matches,
+      const bool interpolated_precision, const bool trapezoid_integral) {
+    std::vector<double> sampled_rc;
+    core::GetEvenlyDistributedPoints01Interval(num_points, &sampled_rc);
+
+    std::vector<std::vector<double>> sampled_pr;
+    sampled_pr.emplace_back();  // sampled_pr[0] stores the mean precision
+    for (const auto& matches : matches_by_group) {
+      std::vector<double> pr, rc;
+      core::ComputePrecisionAndRecall(
+          matches, collapse_matches, interpolated_precision, &pr, &rc);
+      sampled_pr.emplace_back();
+      core::SampleCurveAtGivenPoints(
+          rc, pr, sampled_rc, &sampled_pr.back(), trapezoid_integral);
+    }
+
+    // Compute mean precision
+    const size_t NQ = matches_by_group.size();
+    //#pragma omp parallel for
+    for (size_t i = 0; i < sampled_rc.size(); ++i) {
+      double s = 0.0;
+      for (size_t q = 1; q <= NQ; ++q) {
+        s += sampled_pr[q][i];
+      }
+      sampled_pr[0].push_back(s / NQ);
+    }
+
+    core::WriteCurveToFile(filename, sampled_rc, sampled_pr[0]);
+  }
+
   int Main(int argc, const char **argv) {
 #ifdef WITH_GLOG
     google::InitGoogleLogging(argv[0]);
@@ -114,6 +163,8 @@ class GenericKwsEvalTool {
     std::string querygroups_filename;
     std::string matches_filename;
     std::string sort_criterion = "desc";
+    std::string grp_filename;
+    std::string mrp_filename;
     bool collapse_matches = true;
     bool interpolated_precision = true;
     bool trapezoid_integral = true;
@@ -124,13 +175,14 @@ class GenericKwsEvalTool {
     size_t bootstrap_samples = 10000;
     size_t bootstrap_seed = 0x12345;
     double bootstrap_alpha = 0.05;
+    size_t curve_samples = 10000;
 
     // Options
     Parser cmd_parser(argv[0], description_);
     cmd_parser.RegisterOption(
         "collapse_matches",
         "Collapse all matches with the same score before computing precision "
-            "and recall curves.",
+        "and recall curves.",
         &collapse_matches);
     cmd_parser.RegisterOption(
         "interpolated_precision",
@@ -142,7 +194,7 @@ class GenericKwsEvalTool {
     cmd_parser.RegisterOption(
         "query_set",
         "File containing the set of queries to consider. Events regarding "
-            "other queries are excluded from both references and hypotheses.",
+        "other queries are excluded from both references and hypotheses.",
         &queryset_filename);
     cmd_parser.RegisterOption(
         "dump_matches",
@@ -151,7 +203,7 @@ class GenericKwsEvalTool {
     cmd_parser.RegisterOption(
         "query_groups",
         "File containing the set of query groups to consider in the mAP. "
-            "This option supersedes the queries read from the file --query_set.",
+        "This option supersedes the queries read from the file --query_set.",
         &querygroups_filename);
     cmd_parser.RegisterOption(
         "bootstrap_ci_gap",
@@ -172,7 +224,7 @@ class GenericKwsEvalTool {
     cmd_parser.RegisterOption(
         "bootstrap_samples",
         "Use this number of bootstrapped samples to compute the confidence "
-            "intervals.",
+        "intervals.",
         &bootstrap_samples);
     cmd_parser.RegisterOption(
         "bootstrap_seed",
@@ -187,6 +239,19 @@ class GenericKwsEvalTool {
         "Sort the hypotheses according to this criterion. "
         "Values: \"asc\", \"desc\", \"none\"",
         &sort_criterion);
+    cmd_parser.RegisterOption(
+        "output_grp",
+        "Filename of the output global recall-precision curve.",
+        &grp_filename);
+   cmd_parser.RegisterOption(
+        "output_mrp",
+        "Filename of the output mean recall-precision curve.",
+        &mrp_filename);
+   cmd_parser.RegisterOption(
+       "rp_curve_samples",
+       "Number of sample points to use to interpolate the mean "
+       "recall-precision curve.",
+       &curve_samples);
     // Arguments
     cmd_parser.RegisterArgument(
         "references",
@@ -394,6 +459,18 @@ class GenericKwsEvalTool {
         "NDCG", matches_by_group, bootstrap_ci_mndcg, bootstrap_alpha,
         bootstrap_samples, bootstrap_seed,
         core::MeanNDCG<MatchType>(collapse_matches));
+
+    if (!grp_filename.empty()) {
+      WriteGlobalRPCurve(
+          grp_filename, matches, curve_samples, collapse_matches,
+          interpolated_precision, trapezoid_integral);
+    }
+
+    if (!mrp_filename.empty()) {
+      WriteMeanRPCurve(
+          mrp_filename, matches_by_group, curve_samples, collapse_matches,
+          interpolated_precision, trapezoid_integral);
+    }
 
     return 0;
   }

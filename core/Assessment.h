@@ -3,6 +3,7 @@
 
 #include <algorithm>
 #include <cassert>
+#include <fstream>
 #include <limits>
 #include <numeric>
 #include <random>
@@ -103,7 +104,7 @@ void SortMatchesDecreasingScore(Container *matches) {
             });
 }
 
-// Compute Precision and Recall points
+// Compute Precision and Recall points from errors
 template<typename Real, class Container>
 void ComputePrecisionAndRecall(
     const Container &errors, bool interpolate,
@@ -137,6 +138,24 @@ void ComputePrecisionAndRecall(
     for (size_t i = errors.size() - 1; i > 0; --i) {
       pr->at(i - 1) = std::max(pr->at(i - 1), pr->at(i));
     }
+  }
+}
+
+// Compute precision and recall from matches
+template<typename Real, typename Match>
+void ComputePrecisionAndRecall(
+    const std::vector<Match> &matches,
+    bool collapse_matches, bool interpolate_precision,
+    std::vector<Real>* pr, std::vector<Real>* rc) {
+  pr->clear();
+  rc->clear();
+  if (collapse_matches) {
+    const auto collapsed_errors = CollapseMatches(matches);
+    ComputePrecisionAndRecall(
+        collapsed_errors, interpolate_precision, pr, rc);
+  } else {
+    const auto errors = GetMatchErrors(matches);
+    ComputePrecisionAndRecall(errors, interpolate_precision, pr, rc);
   }
 }
 
@@ -207,20 +226,8 @@ double ComputeGlobalAP(
     const std::vector<Match> &matches, bool collapse_matches,
     bool interpolate_precision, bool trapezoid_integral) {
   std::vector<double> pr, rc;
-  if (collapse_matches) {
-    // Collapse all events with the same score into a single point in the
-    // precision/recall curve.
-    const auto collapsed_errors = CollapseMatches(matches);
-    // Compute precision and recall curves
-    ComputePrecisionAndRecall(collapsed_errors,
-                              interpolate_precision,
-                              &pr, &rc);
-  } else {
-    const auto errors = GetMatchErrors(matches);
-    ComputePrecisionAndRecall(errors,
-                              interpolate_precision,
-                              &pr, &rc);
-  }
+  ComputePrecisionAndRecall(
+      matches, collapse_matches, interpolate_precision, &pr, &rc);
   return ComputeAP(pr, rc, trapezoid_integral);
 }
 
@@ -239,14 +246,8 @@ double ComputeGlobalAP(
   if (sort_matches) { SortMatchesDecreasingScore(&all_matches); }
   // Compute precision and recall curves from the matches
   std::vector<double> pr, rc;
-  if (collapse_matches) {
-    const auto collapsed_errors = CollapseMatches(all_matches);
-    ComputePrecisionAndRecall(collapsed_errors, interpolate_precision,
-                              &pr, &rc);
-  } else {
-    const auto errors = GetMatchErrors(all_matches);
-    ComputePrecisionAndRecall(errors, interpolate_precision, &pr, &rc);
-  }
+  ComputePrecisionAndRecall(
+      all_matches, collapse_matches, interpolate_precision, &pr, &rc);
   return ComputeAP(pr, rc, trapezoid_integral);
 }
 
@@ -260,14 +261,8 @@ double ComputeMeanAP(
     if (sort_matches) { SortMatchesDecreasingScore(&matches_vector); }
     // Compute precision and recall curves from the matches
     std::vector<double> pr, rc;
-    if (collapse_matches) {
-      const auto collapsed_errors = CollapseMatches(matches_vector);
-      ComputePrecisionAndRecall(collapsed_errors, interpolate_precision,
-                                &pr, &rc);
-    } else {
-      const auto errors = GetMatchErrors(matches_vector);
-      ComputePrecisionAndRecall(errors, interpolate_precision, &pr, &rc);
-    }
+    ComputePrecisionAndRecall(
+        matches_vector, collapse_matches, interpolate_precision, &pr, &rc);
     sumAP += ComputeAP(pr, rc, trapezoid_integral);
   }
   // Average AP across all queries.
@@ -318,6 +313,59 @@ double ComputeMeanNDCG(
   }
   // Average NDCG accross all queries.
   return matches_by_query.size() > 0 ? sumNDCG / matches_by_query.size() : 0.0;
+}
+
+template<typename Real>
+void SampleCurveAtGivenPoints(
+    const std::vector<Real>& src_x, const std::vector<Real>& src_y,
+    const std::vector<Real>& dst_x, std::vector<Real>* dst_y,
+    bool linear_interpolation) {
+  dst_y->clear();
+  for (size_t i = 0, j = 0; i < dst_x.size(); ++i) {
+    for (; j < src_x.size() && src_x[j] < dst_x[i]; ++j) {}
+    if (j == src_x.size()) {
+      dst_y->push_back(0);
+    } else if (!linear_interpolation || j == 0) {
+      dst_y->push_back(src_y[j]);
+    } else {
+      const Real w0 = src_x[j] - dst_x[i];
+      const Real w1 = dst_x[i] - src_x[j - 1];
+      const Real t = w0 / (w0 + w1);
+      dst_y->push_back(t * src_y[j - 1] + (1 - t) * src_y[j]);
+    }
+  }
+}
+
+template<typename Real>
+void GetEvenlyDistributedPoints01Interval(
+    const size_t num_points, std::vector<Real>* x) {
+  x->clear();
+  if (num_points > 1) {
+    for (size_t k = 0; k < num_points; ++k) {
+      x->push_back(static_cast<Real>(k) / (num_points - 1));
+    }
+  }
+}
+
+template<typename Real>
+void WriteCurveToFile(
+    const std::string& filename,
+    const std::vector<Real>& x, const std::vector<Real>& y) {
+  if (filename.empty()) {
+    throw std::invalid_argument("invalid filename");
+  }
+  if (x.size() != y.size()) {
+    throw std::invalid_argument(
+        "x and y coordinates must have the same number of elements");
+  }
+
+  std::ofstream fs;
+  fs.exceptions(std::ofstream::badbit | std::ofstream::failbit);
+  fs.open(filename);
+  for (size_t i = 0; i < x.size(); ++i) {
+    fs << std::scientific << x[i] << " " << y[i] << std::endl;
+  }
+  fs.close();
 }
 
 }  // namespace core
