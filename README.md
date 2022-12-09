@@ -45,7 +45,7 @@ Google Mock.
 
 ### Steps
 1. `git clone https://github.com/jpuigcerver/kws-eval/`
-2. `cd kws-eval && mdkir build && cd build`
+2. `cd kws-eval && mkdir build && cd build`
 3. `cmake -DCMAKE_BUILD_TYPE=RELEASE ..`
 4. `make`
 5. `sudo make install`
